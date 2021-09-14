@@ -19,8 +19,7 @@ async fn shutdown_signal() {
 
 #[tokio::main]
 async fn run() {
-    env_logger::init();
-    // rule::add_rule_examples_internal();
+    env_logger::builder().filter_level(LevelFilter::Info).init();
 
     let mut private_key_bytes: &[u8] = include_bytes!("../assets/ca/private.key");
     let mut ca_cert_bytes: &[u8] = include_bytes!("../assets/ca/cert.crt");

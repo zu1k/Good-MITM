@@ -21,3 +21,45 @@
     domain: 'none.lgf.im'
   action:
     redirect: "https://lgf.im/"
+
+- name: "跳转博客-2"
+  filter:
+    url-regex: 'https://r.lgf.im(.*)'
+  action:
+    redirect: "https://lgf.im/$1"
+
+- name: "fuck CSDN"
+  filter:
+    domain-keyword: 'csdn'
+  action:
+    reject
+
+- name: "youtube-1"
+  filter:
+    url-regex: '(^https?:\/\/(?!redirector)[\w-]+\.googlevideo\.com\/(?!dclk_video_ads).+)(ctier=L)(&.+)'
+  action:
+    redirect: "$1$4"
+
+- name: "youtube-2"
+  filter:
+    url-regex: '^https?:\/\/[\w-]+\.googlevideo\.com\/(?!(dclk_video_ads|videoplayback\?)).+(&oad|ctier)'
+  action:
+    reject
+
+- name: "youtube-3"
+  filter:
+    url-regex: '^https?:\/\/(www|s)\.youtube\.com\/api\/stats\/ads'
+  action:
+    reject
+
+- name: "youtube-4"
+  filter:
+    url-regex: '^https?:\/\/(www|s)\.youtube\.com\/(pagead|ptracking)'
+  action:
+    reject
+
+- name: "youtube-5"
+  filter:
+    url-regex: '^https?:\/\/\s.youtube.com/api/stats/qoe?.*adformat='
+  action:
+    reject

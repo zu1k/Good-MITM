@@ -1,12 +1,15 @@
-use crate::action;
+use crate::action::{self, Action};
 use crate::filter;
 use crate::filter::Filter;
 use hudsucker::hyper::Body;
 use hudsucker::hyper::Request;
+use hudsucker::hyper::{header, header::HeaderValue, Response, StatusCode};
+use hudsucker::RequestOrResponse;
 use std::path::Path;
 use std::sync::RwLock;
 use std::vec::Vec;
 mod file;
+use log::*;
 
 lazy_static! {
     static ref RULES: RwLock<Vec<Rule>> = RwLock::from(Vec::new());
@@ -15,7 +18,7 @@ lazy_static! {
 #[derive(Debug, Clone)]
 pub struct Rule {
     pub filter: filter::Filter,
-    pub action: action::Action,
+    pub action: Action,
 }
 
 impl From<file::Rule> for Rule {
@@ -30,6 +33,63 @@ impl From<file::Rule> for Rule {
         Self {
             filter,
             action: rule.action,
+        }
+    }
+}
+
+impl Rule {
+    pub async fn do_req(&self, req: Request<Body>) -> RequestOrResponse {
+        let url = req.uri().to_string();
+        match self.action.clone() {
+            Action::Reject => {
+                info!("[Reject] {}", url);
+                let res = Response::builder()
+                    .status(StatusCode::BAD_GATEWAY)
+                    .body(Body::default())
+                    .unwrap();
+                RequestOrResponse::Response(res)
+            }
+            Action::Redirect(target) => {
+                if target.contains('$') {
+                    if let Filter::UrlRegex(re) = self.filter.clone() {
+                        let target = re
+                            .replace(req.uri().to_string().as_str(), target.as_str())
+                            .to_string();
+                        if let Ok(target_url) = HeaderValue::from_str(target.as_str()) {
+                            let mut res = Response::builder()
+                                .status(StatusCode::FOUND)
+                                .body(Body::default())
+                                .unwrap();
+                            res.headers_mut().insert(header::LOCATION, target_url);
+                            info!("[Redirect] {} -> {}", url, target);
+                            return RequestOrResponse::Response(res);
+                        }
+                    }
+                }
+                return match HeaderValue::from_str(target.as_str()) {
+                    Ok(target_url) => {
+                        let mut res = Response::builder()
+                            .status(StatusCode::FOUND)
+                            .body(Body::default())
+                            .unwrap();
+                        res.headers_mut().insert(header::LOCATION, target_url);
+                        info!("[Redirect] {} -> {}", url, target);
+                        RequestOrResponse::Response(res)
+                    }
+                    Err(_) => RequestOrResponse::Request(req),
+                };
+            }
+            Action::Modify(modify) => {
+                info!("[Modify] {}", url);
+                RequestOrResponse::Request(modify.modify_req(req).await)
+            }
+        }
+    }
+
+    pub async fn do_res(&self, res: Response<Body>) -> Response<Body> {
+        match self.action.clone() {
+            Action::Modify(modify) => modify.modify_res(res).await,
+            _ => res,
         }
     }
 }
