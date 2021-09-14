@@ -17,9 +17,10 @@ opt-level = "z"
 codegen-units = 1
 
 [dependencies]
+bytes = { version = "1", features = ["serde"] }
 env_logger = "0.9"
-fancy-regex = "0.7.1"
-hudsucker = "0.4.0"
+fancy-regex = "0.7"
+hudsucker = "0.4"
 log = "0.4"
 tokio = { version = "1", features = ["full"] }
 

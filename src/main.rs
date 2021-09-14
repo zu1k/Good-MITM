@@ -1,10 +1,6 @@
 use hudsucker::{
     async_trait::async_trait,
-    hyper::{
-        body::*,
-        header::{self, HeaderValue},
-        Body, Request, Response, StatusCode,
-    },
+    hyper::{header, Body, Request, Response},
     rustls::internal::pemfile,
     tungstenite::Message,
     *,
@@ -16,6 +12,8 @@ use action::Action;
 use filter::Filter;
 use log::*;
 use std::net::SocketAddr;
+
+use crate::action::Modify;
 
 async fn shutdown_signal() {
     tokio::signal::ctrl_c()
@@ -39,20 +37,8 @@ impl HttpHandler for MitmHandler {
         let filter = Filter::new_domain("www.nfmovies.com");
         if filter.is_match_req(&req) {
             self.should_modify_response = true;
-
-            let action = Action::Redirect("https://lgf.im/".to_string());
-            match action {
-                Action::Redirect(target) => {
-                    if let Ok(target) = HeaderValue::from_str(target.as_str()) {
-                        let mut resp = Response::builder()
-                            .status(StatusCode::FOUND)
-                            .body(Body::default())
-                            .unwrap();
-                        resp.headers_mut().insert(header::LOCATION, target);
-                        return RequestOrResponse::Response(resp);
-                    }
-                }
-            }
+            // let action = Action::Redirect("https://lgf.im/".to_string());
+            // return action.do_req(req);
         }
         let mut req = req;
         req.headers_mut().remove(header::ACCEPT_ENCODING);
@@ -66,36 +52,10 @@ impl HttpHandler for MitmHandler {
 
         let origin_body = "</body>";
         let new_body = include_str!("../assets/bb.html");
+        let modifier = Modify::new_modify_body(origin_body, new_body);
 
         // println!("{:?}", res);
-        let (parts, body) = res.into_parts();
-        if match parts.headers.get(header::CONTENT_TYPE) {
-            Some(content_type) => {
-                let content_type = content_type.to_str().unwrap_or_default();
-                content_type.contains("text") || content_type.contains("javascript")
-            }
-            None => false,
-        } {
-            match to_bytes(body).await {
-                Ok(content) => match String::from_utf8(content.to_vec()) {
-                    Ok(text) => {
-                        let text = text.replace(origin_body, new_body);
-                        return Response::from_parts(parts, Body::from(text));
-                    }
-                    Err(_) => {
-                        return Response::from_parts(parts, Body::from(content));
-                    }
-                },
-                Err(err) => {
-                    return Response::builder()
-                        .status(StatusCode::BAD_GATEWAY)
-                        .body(Body::from(err.to_string()))
-                        .unwrap();
-                }
-            }
-        } else {
-            return Response::from_parts(parts, body);
-        }
+        modifier.modify_res(res).await
     }
 }
 
