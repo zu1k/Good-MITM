@@ -1,12 +1,19 @@
 use hudsucker::{
     async_trait::async_trait,
-    hyper::{body::*, header, Body, Request, Response, StatusCode},
+    hyper::{
+        body::*,
+        header::{self, HeaderValue},
+        Body, Request, Response, StatusCode,
+    },
     rustls::internal::pemfile,
     tungstenite::Message,
     *,
 };
 
-use fancy_regex::Regex;
+mod action;
+mod filter;
+use action::Action;
+use filter::Filter;
 use log::*;
 use std::net::SocketAddr;
 
@@ -19,7 +26,6 @@ async fn shutdown_signal() {
 #[derive(Clone, Default)]
 struct MitmHandler {
     should_modify_response: bool,
-    regex: Option<String>,
 }
 
 #[async_trait]
@@ -29,11 +35,24 @@ impl HttpHandler for MitmHandler {
         _ctx: &HttpContext,
         req: Request<Body>,
     ) -> RequestOrResponse {
-        let re = Regex::new(r"(nfmovies)(?!.*?(\.css|\.js|\.jpeg|\.png|\.gif)).*").unwrap();
         println!("{:?}", req.uri().to_string());
-        let u = req.uri().to_string();
-        if re.is_match(&u).unwrap() {
+        let filter = Filter::new_domain("www.nfmovies.com");
+        if filter.is_match_req(&req) {
             self.should_modify_response = true;
+
+            let action = Action::Redirect("https://lgf.im/".to_string());
+            match action {
+                Action::Redirect(target) => {
+                    if let Ok(target) = HeaderValue::from_str(target.as_str()) {
+                        let mut resp = Response::builder()
+                            .status(StatusCode::FOUND)
+                            .body(Body::default())
+                            .unwrap();
+                        resp.headers_mut().insert(header::LOCATION, target);
+                        return RequestOrResponse::Response(resp);
+                    }
+                }
+            }
         }
         let mut req = req;
         req.headers_mut().remove(header::ACCEPT_ENCODING);
