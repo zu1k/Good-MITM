@@ -1,0 +1,22 @@
+[package]
+name = "good-mitm"
+version = "0.1.0"
+authors = ["zu1k <i@lgf.im>"]
+edition = "2021"
+description = "Use MITM technology to provide features like rewrite, redirect."
+readme = "README.md"
+homepage = "https://github.com/zu1k/good-mitm"
+repository = "https://github.com/zu1k/good-mitm"
+license = "MIT"
+keywords = ["proxy", "MITM"]
+exclude = [".github/"]
+
+[dependencies]
+env_logger = "0.9"
+fancy-regex = "0.7.1"
+hudsucker = "0.4.0"
+log = "0.4"
+tokio = { version = "1", features = ["full"] }
+
+[dev-dependencies]
+rcgen = { version = "0.8", features = ["x509-parser"] }
