@@ -11,6 +11,11 @@ license = "MIT"
 keywords = ["proxy", "MITM"]
 exclude = [".github/"]
 
+[profile.release]
+lto = true
+opt-level = "z"
+codegen-units = 1
+
 [dependencies]
 env_logger = "0.9"
 fancy-regex = "0.7.1"
