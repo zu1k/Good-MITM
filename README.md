@@ -36,6 +36,8 @@ Adding `http` and `https` proxies to the browser, `http://127.0.0.1:34567` if no
 
 Now I add two demo websites, removing ADs using good-MITM `rewrite` feature.
 
+You should use the demo rule file, `good-mitm.exe -f demo.yaml`
+
 See the effect by comparing the content(ads) with and without using `good-MITM`.
 
 - [低端影视](https://ddrk.me/)

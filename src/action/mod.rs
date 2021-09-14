@@ -3,8 +3,10 @@ pub use modify::*;
 
 use hudsucker::hyper::{header, header::HeaderValue, Body, Request, Response, StatusCode};
 use hudsucker::RequestOrResponse;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum Action {
     Reject,
     Redirect(String),
@@ -12,10 +14,6 @@ pub enum Action {
 }
 
 impl Action {
-    pub fn new() -> Self {
-        Self::Redirect("https://lgf.im/".into())
-    }
-
     pub async fn do_req(&self, req: Request<Body>) -> RequestOrResponse {
         match self {
             Action::Reject => {

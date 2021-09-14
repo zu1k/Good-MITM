@@ -18,11 +18,14 @@ codegen-units = 1
 
 [dependencies]
 bytes = { version = "1", features = ["serde"] }
+clap = "2.33.3"
 env_logger = "0.9"
 fancy-regex = "0.7"
 hudsucker = "0.4"
 lazy_static = "1.4"
 log = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.8"
 tokio = { version = "1", features = ["full"] }
 
 [dev-dependencies]

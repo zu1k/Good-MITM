@@ -1,21 +1,15 @@
 use hudsucker::hyper::{body::*, header, Body, Request, Response, StatusCode};
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub struct BodyModify {
     pub origin: String,
     pub new: String,
 }
 
-impl BodyModify {
-    pub fn new(origin: &str, new: &str) -> Self {
-        Self {
-            origin: String::from(origin),
-            new: String::from(new),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum Modify {
     Header,
     Cookie,
@@ -23,13 +17,9 @@ pub enum Modify {
 }
 
 impl Modify {
-    pub fn new_modify_body(origin: &str, new: &str) -> Self {
-        Self::Body(BodyModify::new(origin, new))
-    }
-
     pub async fn modify_req(&self, req: Request<Body>) -> Request<Body> {
         match self {
-            Modify::Body(bm) => req,
+            Modify::Body(_bm) => req,
             _ => req,
         }
     }
