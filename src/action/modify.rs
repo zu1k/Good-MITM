@@ -1,5 +1,6 @@
 use hudsucker::hyper::{body::*, header, Body, Request, Response, StatusCode};
 
+#[derive(Debug, Clone)]
 pub struct BodyModify {
     pub origin: String,
     pub new: String,
@@ -14,6 +15,7 @@ impl BodyModify {
     }
 }
 
+#[derive(Debug, Clone)]
 pub enum Modify {
     Header,
     Cookie,

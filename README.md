@@ -26,6 +26,15 @@ You need to trust the root certificate just generated, either by adding trust in
 
 Adding `http` and `https` proxies to the browser, `http://127.0.0.1:34567` if not modified.
 
+### Test Demo Websites
+
+Now I add two demo websites, removing ADs using good-MITM `rewrite` feature.
+
+See the effect by comparing the content(ads) with and without using `good-MITM`.
+
+- [低端影视](https://ddrk.me/)
+- [奈菲影视](https://www.nfmovies.com/)
+
 ## Thanks
 
 - [**hudsucker**](https://github.com/omjadas/hudsucker): a Rust crate providing MITM features

@@ -1,6 +1,10 @@
+#[macro_use]
+extern crate lazy_static;
+
 mod action;
 mod filter;
 mod handler;
+mod rule;
 
 use hudsucker::{rustls::internal::pemfile, *};
 use log::*;
@@ -15,6 +19,7 @@ async fn shutdown_signal() {
 #[tokio::main]
 async fn main() {
     env_logger::init();
+    rule::add_rule_examples();
 
     let mut private_key_bytes: &[u8] = include_bytes!("../assets/ca/private.key");
     let mut ca_cert_bytes: &[u8] = include_bytes!("../assets/ca/cert.crt");

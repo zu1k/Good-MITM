@@ -1,6 +1,7 @@
 use fancy_regex::Regex;
 use hudsucker::hyper::{Body, Request};
 
+#[derive(Debug, Clone)]
 pub enum Filter {
     Domain(String),
     DomainKeyword(String),

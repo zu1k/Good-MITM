@@ -549,6 +549,7 @@ dependencies = [
  "env_logger",
  "fancy-regex",
  "hudsucker",
+ "lazy_static",
  "log",
  "rcgen",
  "tokio",

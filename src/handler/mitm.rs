@@ -1,5 +1,5 @@
-use crate::action::Modify;
-use crate::filter::Filter;
+use crate::action::Action;
+use crate::rule;
 
 use hudsucker::{
     async_trait::async_trait,
@@ -10,6 +10,7 @@ use hudsucker::{
 #[derive(Clone, Default)]
 pub struct MitmHandler {
     should_modify_response: bool,
+    action: Option<Action>,
 }
 
 #[async_trait]
@@ -20,27 +21,26 @@ impl HttpHandler for MitmHandler {
         req: Request<Body>,
     ) -> RequestOrResponse {
         println!("{:?}", req.uri().to_string());
-        let filter = Filter::new_domain("www.nfmovies.com");
-        if filter.is_match_req(&req) {
-            self.should_modify_response = true;
-            // let action = Action::Redirect("https://lgf.im/".to_string());
-            // return action.do_req(req);
-        }
+
+        // remove accept-encoding to avoid encoded body
         let mut req = req;
         req.headers_mut().remove(header::ACCEPT_ENCODING);
+
+        if let Some(rule) = rule::match_rule(&req) {
+            self.should_modify_response = true;
+            let rt = rule.action.do_req(req).await;
+            self.action = Some(rule.action);
+            return rt;
+        }
+
         RequestOrResponse::Request(req)
     }
 
     async fn handle_response(&mut self, _ctx: &HttpContext, res: Response<Body>) -> Response<Body> {
-        if !self.should_modify_response {
+        if !self.should_modify_response || self.action.is_none() {
             return res;
         }
-
-        let origin_body = "</body>";
-        let new_body = include_str!("../../assets/bb.html");
-        let modifier = Modify::new_modify_body(origin_body, new_body);
-
-        // println!("{:?}", res);
-        modifier.modify_res(res).await
+        let action = self.action.clone().unwrap();
+        action.do_res(res).await
     }
 }

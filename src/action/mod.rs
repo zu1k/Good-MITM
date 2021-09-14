@@ -4,6 +4,7 @@ pub use modify::*;
 use hudsucker::hyper::{header, header::HeaderValue, Body, Request, Response, StatusCode};
 use hudsucker::RequestOrResponse;
 
+#[derive(Debug, Clone)]
 pub enum Action {
     Reject,
     Redirect(String),
@@ -11,6 +12,10 @@ pub enum Action {
 }
 
 impl Action {
+    pub fn new() -> Self {
+        Self::Redirect("https://lgf.im/".into())
+    }
+
     pub async fn do_req(&self, req: Request<Body>) -> RequestOrResponse {
         match self {
             Action::Reject => {
@@ -29,11 +34,7 @@ impl Action {
                     res.headers_mut().insert(header::LOCATION, target);
                     RequestOrResponse::Response(res)
                 }
-                Err(_) => {
-                    let mut req = req;
-                    req.headers_mut().remove(header::ACCEPT_ENCODING);
-                    RequestOrResponse::Request(req)
-                }
+                Err(_) => RequestOrResponse::Request(req),
             },
             Action::Modify(modify) => RequestOrResponse::Request(modify.modify_req(req).await),
         }
