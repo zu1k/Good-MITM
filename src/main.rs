@@ -8,8 +8,7 @@ mod rule;
 use clap::{App, Arg, SubCommand};
 use hudsucker::{rustls::internal::pemfile, *};
 use log::*;
-use std::fs;
-use std::net::SocketAddr;
+use std::{fs, net::SocketAddr};
 
 async fn shutdown_signal() {
     tokio::signal::ctrl_c()
@@ -64,7 +63,7 @@ fn main() {
                         .alias("private")
                         .help("private key file path")
                         .long_help("private key file path")
-                        .default_value("private.key")
+                        .default_value("ca/private.key")
                         .takes_value(true)
                         .required(true),
                 )
@@ -74,7 +73,7 @@ fn main() {
                         .long("cert")
                         .help("cert file path")
                         .long_help("cert file path")
-                        .default_value("cert.crt")
+                        .default_value("ca/cert.crt")
                         .takes_value(true)
                         .required(true),
                 )

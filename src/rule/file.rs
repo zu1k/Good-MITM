@@ -1,8 +1,6 @@
 use super::action;
 use serde::{Deserialize, Serialize};
-use std::error::Error;
-use std::path::Path;
-use std::{fs::File, io::BufReader};
+use std::{error::Error, fs::File, io::BufReader, path::Path};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Rule {

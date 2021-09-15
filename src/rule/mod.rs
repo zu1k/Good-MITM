@@ -4,14 +4,13 @@ mod filter;
 
 use action::Action;
 use filter::Filter;
-use hudsucker::hyper::Body;
-use hudsucker::hyper::Request;
-use hudsucker::hyper::{header, header::HeaderValue, Response, StatusCode};
-use hudsucker::RequestOrResponse;
+use hudsucker::{
+    decode_response,
+    hyper::{header, header::HeaderValue, Body, Request, Response, StatusCode},
+    RequestOrResponse,
+};
 use log::*;
-use std::path::Path;
-use std::sync::RwLock;
-use std::vec::Vec;
+use std::{path::Path, sync::RwLock, vec::Vec};
 
 lazy_static! {
     static ref RULES: RwLock<Vec<Rule>> = RwLock::from(Vec::new());
@@ -106,6 +105,7 @@ impl Rule {
         match self.action.clone() {
             Action::ModifyResponse(modify) => {
                 info!("[ModifyResponse] {}", url);
+                let res = decode_response(res).unwrap();
                 modify.modify_res(res).await
             }
             _ => res,
