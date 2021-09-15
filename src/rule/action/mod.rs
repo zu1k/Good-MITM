@@ -8,5 +8,6 @@ use serde::{Deserialize, Serialize};
 pub enum Action {
     Reject,
     Redirect(String),
-    Modify(Modify),
+    ModifyRequest(Modify),
+    ModifyResponse(Modify),
 }

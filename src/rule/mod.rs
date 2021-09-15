@@ -21,6 +21,8 @@ lazy_static! {
 pub struct Rule {
     pub filter: Filter,
     pub action: Action,
+
+    url: Option<String>,
 }
 
 impl From<file::Rule> for Rule {
@@ -35,13 +37,15 @@ impl From<file::Rule> for Rule {
         Self {
             filter,
             action: rule.action,
+            url: None,
         }
     }
 }
 
 impl Rule {
-    pub async fn do_req(&self, req: Request<Body>) -> RequestOrResponse {
+    pub async fn do_req(&mut self, req: Request<Body>) -> RequestOrResponse {
         let url = req.uri().to_string();
+        self.url = Some(url.clone());
         match self.action.clone() {
             Action::Reject => {
                 info!("[Reject] {}", url);
@@ -81,16 +85,29 @@ impl Rule {
                     Err(_) => RequestOrResponse::Request(req),
                 };
             }
-            Action::Modify(modify) => {
-                info!("[Modify] {}", url);
-                RequestOrResponse::Request(modify.modify_req(req).await)
+            Action::ModifyRequest(modify) => {
+                info!("[ModifyRequest] {}", url);
+                match modify.modify_req(req).await {
+                    Some(req) => RequestOrResponse::Request(req),
+                    None => RequestOrResponse::Response(
+                        Response::builder()
+                            .status(StatusCode::BAD_REQUEST)
+                            .body(Body::default())
+                            .unwrap(),
+                    ),
+                }
             }
+            _ => RequestOrResponse::Request(req),
         }
     }
 
     pub async fn do_res(&self, res: Response<Body>) -> Response<Body> {
+        let url = self.url.clone().unwrap_or_default();
         match self.action.clone() {
-            Action::Modify(modify) => modify.modify_res(res).await,
+            Action::ModifyResponse(modify) => {
+                info!("[ModifyResponse] {}", url);
+                modify.modify_res(res).await
+            }
             _ => res,
         }
     }

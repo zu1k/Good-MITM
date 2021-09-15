@@ -23,7 +23,7 @@ impl HttpHandler for MitmHandler {
         let mut req = req;
         req.headers_mut().remove(header::ACCEPT_ENCODING);
 
-        if let Some(rule) = rule::match_rule(&req) {
+        if let Some(mut rule) = rule::match_rule(&req) {
             self.should_modify_response = true;
             let rt = rule.do_req(req).await;
             self.rule = Some(rule);
