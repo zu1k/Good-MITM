@@ -8,7 +8,7 @@ mod rule;
 use clap::{App, Arg, SubCommand};
 use hudsucker::{rustls::internal::pemfile, *};
 use log::*;
-use std::{fs, net::SocketAddr};
+use std::fs;
 
 async fn shutdown_signal() {
     tokio::signal::ctrl_c()
@@ -17,7 +17,7 @@ async fn shutdown_signal() {
 }
 
 #[tokio::main]
-async fn run(key_path: &str, cert_path: &str) {
+async fn run(key_path: &str, cert_path: &str, bind: &str) {
     let private_key_bytes = fs::read(key_path).expect("ca private key file path not valid!");
     let ca_cert_bytes = fs::read(cert_path).expect("ca cert file path not valid!");
 
@@ -32,7 +32,7 @@ async fn run(key_path: &str, cert_path: &str) {
         .expect("Failed to create Certificate Authority");
 
     let proxy_config = ProxyConfig {
-        listen_addr: SocketAddr::from(([127, 0, 0, 1], 34567)),
+        listen_addr: bind.parse().expect("bind address not valid!"),
         shutdown_signal: shutdown_signal(),
         http_handler: handler::MitmHandler::default(),
         incoming_message_handler: handler::NoopMessageHandler {},
@@ -85,6 +85,16 @@ fn main() {
                         .long_help("load rules from file")
                         .takes_value(true)
                         .required(true),
+                )
+                .arg(
+                    Arg::with_name("bind")
+                        .short("b")
+                        .long("bind")
+                        .help("bind address")
+                        .long_help("bind address")
+                        .default_value("127.0.0.1:34567")
+                        .takes_value(true)
+                        .required(true),
                 ),
         )
         .subcommand(
@@ -100,6 +110,9 @@ fn main() {
             let rule_file = matches
                 .value_of("rule")
                 .expect("rule file path should not be none");
+            let bind = matches
+                .value_of("bind")
+                .expect("bind address should not be none");
             if let Err(err) = rule::add_rule_file(rule_file) {
                 error!("parse rule file failed, err: {}", err);
                 std::process::exit(3);
@@ -108,9 +121,10 @@ fn main() {
             let key_path = matches
                 .value_of("key")
                 .expect("need root ca private key file");
+
             let cert_path = matches.value_of("cert").expect("need root ca cert file");
 
-            run(key_path, cert_path)
+            run(key_path, cert_path, bind)
         }
         Some("genca") => ca::gen_ca(),
         _ => {
