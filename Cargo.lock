@@ -684,8 +684,7 @@ checksum = "6456b8a6c8f33fee7d958fcd1b60d55b11940a79e63ae87013e6d22e26034440"
 [[package]]
 name = "hudsucker"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4e4a766b2b4fac07be12c25cfb73fc5ab9206609c11f90151c1faccc51b4376"
+source = "git+https://github.com/zu1k/hudsucker.git?branch=good-mitm#b3556568b69bdb79577ab79d41abc342bdd0d226"
 dependencies = [
  "async-trait",
  "bytes",

@@ -9,6 +9,7 @@ mod rule;
 use clap::{App, Arg};
 use hudsucker::{rustls::internal::pemfile, *};
 use log::*;
+use std::fs;
 use std::net::SocketAddr;
 
 async fn shutdown_signal() {
@@ -18,15 +19,14 @@ async fn shutdown_signal() {
 }
 
 #[tokio::main]
-async fn run() {
-    env_logger::builder().filter_level(LevelFilter::Info).init();
+async fn run(key_path: &str, cert_path: &str) {
+    let private_key_bytes = fs::read(key_path).expect("ca private key file path not valid!");
+    let ca_cert_bytes = fs::read(cert_path).expect("ca cert file path not valid!");
 
-    let mut private_key_bytes: &[u8] = include_bytes!("../assets/ca/private.key");
-    let mut ca_cert_bytes: &[u8] = include_bytes!("../assets/ca/cert.crt");
-    let private_key = pemfile::pkcs8_private_keys(&mut private_key_bytes)
+    let private_key = pemfile::pkcs8_private_keys(&mut private_key_bytes.as_slice())
         .expect("Failed to parse private key")
         .remove(0);
-    let ca_cert = pemfile::certs(&mut ca_cert_bytes)
+    let ca_cert = pemfile::certs(&mut ca_cert_bytes.as_slice())
         .expect("Failed to parse CA certificate")
         .remove(0);
 
@@ -49,12 +49,35 @@ async fn run() {
 }
 
 fn main() {
+    env_logger::builder().filter_level(LevelFilter::Info).init();
+
     let matches = App::new("Good Man in the Middle")
         .author("zu1k <i@lgf.im>")
         .about("Use MITM technology to provide features like rewrite, redirect.")
         .arg(
+            Arg::with_name("key")
+                .short("k")
+                .long("key")
+                .alias("private")
+                .help("private key file path")
+                .long_help("private key file path")
+                .default_value("ca/private.key")
+                .takes_value(true)
+                .required(true),
+        )
+        .arg(
+            Arg::with_name("cert")
+                .short("c")
+                .long("cert")
+                .help("cert file path")
+                .long_help("cert file path")
+                .default_value("ca/cert.crt")
+                .takes_value(true)
+                .required(true),
+        )
+        .arg(
             Arg::with_name("rule")
-                .short("f")
+                .short("r")
                 .long("rule")
                 .help("rule file")
                 .long_help("load rules from file")
@@ -70,5 +93,11 @@ fn main() {
         error!("parse rule file failed, err: {}", err);
         std::process::exit(3);
     }
-    run()
+
+    let key_path = matches
+        .value_of("key")
+        .expect("need root ca private key file");
+    let cert_path = matches.value_of("cert").expect("need root ca cert file");
+
+    run(key_path, cert_path)
 }

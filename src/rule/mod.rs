@@ -1,5 +1,4 @@
-use crate::action::{self, Action};
-use crate::filter;
+use crate::action::Action;
 use crate::filter::Filter;
 use hudsucker::hyper::Body;
 use hudsucker::hyper::Request;
@@ -17,7 +16,7 @@ lazy_static! {
 
 #[derive(Debug, Clone)]
 pub struct Rule {
-    pub filter: filter::Filter,
+    pub filter: Filter,
     pub action: Action,
 }
 
@@ -102,27 +101,6 @@ pub fn match_rule(req: &Request<Body>) -> Option<Rule> {
         }
     }
     None
-}
-
-#[allow(dead_code)]
-pub fn add_rule_examples_internal() {
-    let mut rules = RULES.write().unwrap();
-    rules.push(Rule {
-        filter: filter::Filter::new_url_regex(r"^https:?/\/ddrk.me.*"),
-        action: action::Action::Modify(action::Modify::Body(action::BodyModify {
-            origin: "<head>".to_string(),
-            new: include_str!("../../assets/body/ddrk.html").to_string(),
-        })),
-    });
-    rules.push(Rule {
-        filter: filter::Filter::new_url_regex(
-            r"(nfmovies)(?!.*?(\.css|\.js|\.jpeg|\.png|\.gif)).*",
-        ),
-        action: action::Action::Modify(action::Modify::Body(action::BodyModify {
-            origin: "<head>".to_string(),
-            new: include_str!("../../assets/body/nfmovies.html").to_string(),
-        })),
-    });
 }
 
 pub fn add_rule_file<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn std::error::Error>> {
