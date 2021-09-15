@@ -1,14 +1,17 @@
-use crate::action::Action;
-use crate::filter::Filter;
+mod action;
+mod file;
+mod filter;
+
+use action::Action;
+use filter::Filter;
 use hudsucker::hyper::Body;
 use hudsucker::hyper::Request;
 use hudsucker::hyper::{header, header::HeaderValue, Response, StatusCode};
 use hudsucker::RequestOrResponse;
+use log::*;
 use std::path::Path;
 use std::sync::RwLock;
 use std::vec::Vec;
-mod file;
-use log::*;
 
 lazy_static! {
     static ref RULES: RwLock<Vec<Rule>> = RwLock::from(Vec::new());

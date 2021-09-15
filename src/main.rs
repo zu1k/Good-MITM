@@ -1,8 +1,6 @@
 #[macro_use]
 extern crate lazy_static;
 
-mod action;
-mod filter;
 mod handler;
 mod rule;
 

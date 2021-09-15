@@ -8,8 +8,6 @@
 
 Use MITM technology to provide features like `rewrite`, `redirect`.
 
-Work is still in the idea validation phase!
-
 ## Usage
 
 ### Certificate Preparation
@@ -36,7 +34,7 @@ Adding `http` and `https` proxies to the browser, `http://127.0.0.1:34567` if no
 
 Now I add two demo websites, removing ADs using good-MITM `rewrite` feature.
 
-You should use the demo rule file, `good-mitm.exe -f demo.yaml`
+You should use the demo rule file, `good-mitm.exe -k private.key -c cert.crt -r demo.yaml`
 
 See the effect by comparing the content(ads) with and without using `good-MITM`.
 
