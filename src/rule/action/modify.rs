@@ -1,4 +1,4 @@
-use hudsucker::hyper::{body::*, header, Body, Request, Response, StatusCode};
+use hudsucker::hyper::{body::*, header, Body, HeaderMap, Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -10,8 +10,15 @@ pub struct BodyModify {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
+pub struct HeaderModify {
+    pub origin: String,
+    pub new: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum Modify {
-    Header,
+    Header(HeaderModify),
     Cookie,
     Body(BodyModify),
 }
@@ -45,6 +52,11 @@ impl Modify {
                 } else {
                     Some(Request::from_parts(parts, body))
                 }
+            }
+            Modify::Header(hm) => {
+                let mut req = req;
+                self.modify_header(req.headers_mut(), hm);
+                Some(req)
             }
             _ => Some(req),
         }
@@ -81,7 +93,24 @@ impl Modify {
                     Response::from_parts(parts, body)
                 }
             }
+            Modify::Header(hm) => {
+                let mut res = res;
+                self.modify_header(res.headers_mut(), hm);
+                res
+            }
             _ => res,
+        }
+    }
+
+    fn modify_header(&self, header: &mut HeaderMap, hm: &HeaderModify) {
+        let origin = hm.origin.as_str();
+        let new = hm.new.as_str();
+        for value in header.values_mut() {
+            let text = value.to_str().unwrap().to_string();
+            if text.contains(origin) {
+                let text = text.replace(origin, new);
+                *value = header::HeaderValue::from_str(text.as_str()).unwrap();
+            }
         }
     }
 }

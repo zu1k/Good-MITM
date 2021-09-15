@@ -1,65 +1,26 @@
-- name: "奈菲影视去广告"
-  filter:
-    url-regex: '(nfmovies)(?!.*?(\.css|\.js|\.jpeg|\.png|\.gif)).*'
-  action:
-    modify-response:
-      body:
-        origin: '<head>'
-        new: '<link rel="stylesheet" href="https://limbopro.com/CSS/nfmovies.css" type="text/css"><script type="text/javascript"  src="//limbopro.com/Adguard/nfmovies.js"></script></head>'
-
-- name: "低端影视去广告"
-  filter:
-    url-regex: '^https:?/\/ddrk.me.*'
-  action:
-    modify-response:
-      body:
-        origin: '<head>'
-        new: '<head><link rel="stylesheet" href="https://limbopro.com/CSS/ddrk.css" type="text/css"><script type="text/javascript" src="//limbopro.com/Adguard/ddrk.js"></script>'
-
-- name: "跳转博客"
+- name: "redirect"
   filter:
     domain: 'none.lgf.im'
   action:
     redirect: "https://lgf.im/"
 
-- name: "跳转博客-2"
+- name: "redirect regex"
   filter:
     url-regex: 'https://r.lgf.im(.*)'
   action:
     redirect: "https://lgf.im/$1"
 
-- name: "fuck CSDN"
+- name: "reject CSDN"
   filter:
     domain-keyword: 'csdn'
   action:
     reject
 
-- name: "youtube-1"
+- name: "modify response header"
   filter:
-    url-regex: '(^https?:\/\/(?!redirector)[\w-]+\.googlevideo\.com\/(?!dclk_video_ads).+)(ctier=L)(&.+)'
+    domain-suffix: 'lgf.im'
   action:
-    redirect: "$1$4"
-
-- name: "youtube-2"
-  filter:
-    url-regex: '^https?:\/\/[\w-]+\.googlevideo\.com\/(?!(dclk_video_ads|videoplayback\?)).+(&oad|ctier)'
-  action:
-    reject
-
-- name: "youtube-3"
-  filter:
-    url-regex: '^https?:\/\/(www|s)\.youtube\.com\/api\/stats\/ads'
-  action:
-    reject
-
-- name: "youtube-4"
-  filter:
-    url-regex: '^https?:\/\/(www|s)\.youtube\.com\/(pagead|ptracking)'
-  action:
-    reject
-
-- name: "youtube-5"
-  filter:
-    url-regex: '^https?:\/\/\s.youtube.com/api/stats/qoe?.*adformat='
-  action:
-    reject
+    modify-response:
+      header:
+        origin: "2021"
+        new: "2022"

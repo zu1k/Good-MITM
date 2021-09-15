@@ -1,0 +1,17 @@
+- name: "奈菲影视去广告"
+  filter:
+    url-regex: '(nfmovies)(?!.*?(\.css|\.js|\.jpeg|\.png|\.gif)).*'
+  action:
+    modify-response:
+      body:
+        origin: '<head>'
+        new: '<link rel="stylesheet" href="https://limbopro.com/CSS/nfmovies.css" type="text/css"><script type="text/javascript"  src="//limbopro.com/Adguard/nfmovies.js"></script></head>'
+
+- name: "低端影视去广告"
+  filter:
+    url-regex: '^https:?/\/ddrk.me.*'
+  action:
+    modify-response:
+      body:
+        origin: '<head>'
+        new: '<head><link rel="stylesheet" href="https://limbopro.com/CSS/ddrk.css" type="text/css"><script type="text/javascript" src="//limbopro.com/Adguard/ddrk.js"></script>'
