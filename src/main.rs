@@ -1,10 +1,11 @@
 #[macro_use]
 extern crate lazy_static;
 
+mod ca;
 mod handler;
 mod rule;
 
-use clap::{App, Arg};
+use clap::{App, Arg, SubCommand};
 use hudsucker::{rustls::internal::pemfile, *};
 use log::*;
 use std::fs;
@@ -52,50 +53,69 @@ fn main() {
     let matches = App::new("Good Man in the Middle")
         .author("zu1k <i@lgf.im>")
         .about("Use MITM technology to provide features like rewrite, redirect.")
-        .arg(
-            Arg::with_name("key")
-                .short("k")
-                .long("key")
-                .alias("private")
-                .help("private key file path")
-                .long_help("private key file path")
-                .default_value("ca/private.key")
-                .takes_value(true)
-                .required(true),
+        .subcommand(
+            SubCommand::with_name("run")
+                .about("start to run")
+                .display_order(1)
+                .arg(
+                    Arg::with_name("key")
+                        .short("k")
+                        .long("key")
+                        .alias("private")
+                        .help("private key file path")
+                        .long_help("private key file path")
+                        .default_value("private.key")
+                        .takes_value(true)
+                        .required(true),
+                )
+                .arg(
+                    Arg::with_name("cert")
+                        .short("c")
+                        .long("cert")
+                        .help("cert file path")
+                        .long_help("cert file path")
+                        .default_value("cert.crt")
+                        .takes_value(true)
+                        .required(true),
+                )
+                .arg(
+                    Arg::with_name("rule")
+                        .short("r")
+                        .long("rule")
+                        .help("rule file")
+                        .long_help("load rules from file")
+                        .takes_value(true)
+                        .required(true),
+                ),
         )
-        .arg(
-            Arg::with_name("cert")
-                .short("c")
-                .long("cert")
-                .help("cert file path")
-                .long_help("cert file path")
-                .default_value("ca/cert.crt")
-                .takes_value(true)
-                .required(true),
-        )
-        .arg(
-            Arg::with_name("rule")
-                .short("r")
-                .long("rule")
-                .help("rule file")
-                .long_help("load rules from file")
-                .takes_value(true)
-                .required(true),
+        .subcommand(
+            SubCommand::with_name("genca")
+                .display_order(2)
+                .about("generate your own ca private key and certificate"),
         )
         .get_matches();
 
-    let rule_file = matches
-        .value_of("rule")
-        .expect("rule file path should not be none");
-    if let Err(err) = rule::add_rule_file(rule_file) {
-        error!("parse rule file failed, err: {}", err);
-        std::process::exit(3);
+    match matches.subcommand_name() {
+        Some("run") => {
+            let matches = matches.subcommand_matches("run").unwrap();
+            let rule_file = matches
+                .value_of("rule")
+                .expect("rule file path should not be none");
+            if let Err(err) = rule::add_rule_file(rule_file) {
+                error!("parse rule file failed, err: {}", err);
+                std::process::exit(3);
+            }
+
+            let key_path = matches
+                .value_of("key")
+                .expect("need root ca private key file");
+            let cert_path = matches.value_of("cert").expect("need root ca cert file");
+
+            run(key_path, cert_path)
+        }
+        Some("genca") => ca::gen_ca(),
+        _ => {
+            println!("subcommand not valid!")
+        }
     }
-
-    let key_path = matches
-        .value_of("key")
-        .expect("need root ca private key file");
-    let cert_path = matches.value_of("cert").expect("need root ca cert file");
-
-    run(key_path, cert_path)
 }

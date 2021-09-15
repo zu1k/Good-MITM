@@ -18,9 +18,9 @@ For MITM functionality, it is required that you trust the self-signed root certi
 
 For security reasons, you need to generate your own root certificate.
 
-**DO NOT USE** the cert in the `assets/ca` directory, otherwise a security risk will lurk.
-
-Use [examples/gen_ca.rs](examples/gen_ca.rs) to generate your own root certificate.
+```shell
+good-mitm.exe genca
+```
 
 #### Trust your root certificate
 
@@ -30,11 +30,11 @@ You need to trust the root certificate just generated, either by adding trust in
 
 Adding `http` and `https` proxies to the browser, `http://127.0.0.1:34567` if not modified.
 
-### Test Demo Websites
+### Test Demo Rules
 
 Now I add two demo websites, removing ADs using good-MITM `rewrite` feature.
 
-You should use the demo rule file, `good-mitm.exe -k private.key -c cert.crt -r demo.yaml`
+You should use the demo rule file, `good-mitm.exe -k private.key -c cert.crt -r ads.yaml`
 
 See the effect by comparing the content(ads) with and without using `good-MITM`.
 
