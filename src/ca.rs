@@ -8,8 +8,17 @@ pub fn gen_ca() {
     let mut param = CertificateParams::new(subject_alt_names);
     let mut distinguished_name = DistinguishedName::new();
     distinguished_name.push(DnType::CommonName, "Good-MITM CA Cert");
+    distinguished_name.push(DnType::OrganizationName, "Good-MITM");
     param.distinguished_name = distinguished_name;
-    param.extended_key_usages = vec![ExtendedKeyUsagePurpose::Any];
+    param.key_usages = vec![
+        KeyUsagePurpose::DigitalSignature,
+        KeyUsagePurpose::ContentCommitment,
+        KeyUsagePurpose::KeyEncipherment,
+        KeyUsagePurpose::DataEncipherment,
+        KeyUsagePurpose::KeyAgreement,
+        KeyUsagePurpose::KeyCertSign,
+        KeyUsagePurpose::CrlSign,
+    ];
     param.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
     let cert = Certificate::from_params(param).unwrap();
     let cert_crt = cert.serialize_pem().unwrap();
