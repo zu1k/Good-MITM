@@ -1,7 +1,7 @@
 use crate::rule::{self, Rule};
 use hudsucker::{
     async_trait::async_trait,
-    hyper::{Body, Request, Response},
+    hyper::{header, Body, Request, Response},
     HttpContext, HttpHandler, RequestOrResponse,
 };
 
@@ -19,8 +19,8 @@ impl HttpHandler for MitmHandler {
         req: Request<Body>,
     ) -> RequestOrResponse {
         // remove accept-encoding to avoid encoded body
-        // let mut req = req;
-        // req.headers_mut().remove(header::ACCEPT_ENCODING);
+        let mut req = req;
+        req.headers_mut().remove(header::ACCEPT_ENCODING);
 
         if let Some(mut rule) = rule::match_rule(&req) {
             self.should_modify_response = true;

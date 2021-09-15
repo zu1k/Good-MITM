@@ -105,7 +105,11 @@ impl Rule {
         match self.action.clone() {
             Action::ModifyResponse(modify) => {
                 info!("[ModifyResponse] {}", url);
-                let res = decode_response(res).unwrap();
+                let res = if res.headers().get(header::CONTENT_ENCODING).is_some() {
+                    decode_response(res).unwrap()
+                } else {
+                    res
+                };
                 modify.modify_res(res).await
             }
             _ => res,
