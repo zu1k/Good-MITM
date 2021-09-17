@@ -760,9 +760,9 @@ checksum = "6456b8a6c8f33fee7d958fcd1b60d55b11940a79e63ae87013e6d22e26034440"
 
 [[package]]
 name = "hudsucker"
-version = "0.4.1"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d5d0c053fc81d9b9af9725adb50e778ac1e86f3ff8794870732ba1948ce920e"
+checksum = "33711d8131bf4055093e2dd5d5fca2d9be4013e016388111e8c8dea6d8cd3599"
 dependencies = [
  "async-compression",
  "async-trait",
