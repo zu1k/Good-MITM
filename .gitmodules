@@ -1,0 +1,3 @@
+[submodule "hudsucker"]
+	path = hudsucker
+	url = https://github.com/zu1k/hudsucker.git
