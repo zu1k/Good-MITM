@@ -7,7 +7,7 @@ pub fn gen_ca() {
     let subject_alt_names = vec!["*".to_string()];
     let mut param = CertificateParams::new(subject_alt_names);
     let mut distinguished_name = DistinguishedName::new();
-    distinguished_name.push(DnType::CommonName, "Good-MITM CA Cert");
+    distinguished_name.push(DnType::CommonName, "Good-MITM");
     distinguished_name.push(DnType::OrganizationName, "Good-MITM");
     param.distinguished_name = distinguished_name;
     param.key_usages = vec![

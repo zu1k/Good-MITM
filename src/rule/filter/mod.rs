@@ -1,5 +1,7 @@
 use fancy_regex::Regex;
 use hudsucker::hyper::{Body, Request};
+mod mitm_filter;
+pub use mitm_filter::*;
 
 #[derive(Debug, Clone)]
 pub enum Filter {

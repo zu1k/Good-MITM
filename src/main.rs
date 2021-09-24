@@ -37,6 +37,7 @@ async fn run(key_path: &str, cert_path: &str, bind: &str) {
         http_handler: handler::MitmHandler::default(),
         incoming_message_handler: handler::NoopMessageHandler {},
         outgoing_message_handler: handler::NoopMessageHandler {},
+        mitm_filter: rule::filter::MitmFilter {},
         upstream_proxy: None,
         ca,
     };

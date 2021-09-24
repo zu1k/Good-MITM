@@ -1,6 +1,6 @@
 mod action;
 mod file;
-mod filter;
+pub mod filter;
 
 use action::Action;
 use filter::Filter;
