@@ -1,14 +1,16 @@
 use crate::rule::{self, Rule};
 use hudsucker::{
     async_trait::async_trait,
-    hyper::{header, Body, Request, Response},
+    hyper::{header, Body, Request, Response, Uri},
     HttpContext, HttpHandler, RequestOrResponse,
 };
+use log::info;
 
 #[derive(Clone, Default)]
 pub struct MitmHandler {
     should_modify_response: bool,
     rule: Option<Rule>,
+    uri: Option<Uri>,
 }
 
 #[async_trait]
@@ -18,6 +20,8 @@ impl HttpHandler for MitmHandler {
         _ctx: &HttpContext,
         req: Request<Body>,
     ) -> RequestOrResponse {
+        self.uri = Some(req.uri().clone());
+
         // remove accept-encoding to avoid encoded body
         let mut req = req;
         req.headers_mut().remove(header::ACCEPT_ENCODING);
@@ -36,6 +40,18 @@ impl HttpHandler for MitmHandler {
         if !self.should_modify_response || self.rule.is_none() {
             return res;
         }
+        let uri = self.uri.as_ref().unwrap();
+        let content_type = match res.headers().get(header::CONTENT_TYPE) {
+            Some(content_type) => content_type.to_str().unwrap_or_default(),
+            None => "unknown",
+        };
+        info!(
+            "[Response] {} {} {}",
+            res.status(),
+            uri.host().unwrap_or_default(),
+            content_type
+        );
+
         let rule = self.rule.clone().unwrap();
         rule.do_res(res).await
     }
