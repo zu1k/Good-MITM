@@ -26,8 +26,8 @@ pub use error::Error;
 pub use hyper;
 pub use hyper_proxy;
 pub use noop::*;
-pub use tokio_tungstenite::tungstenite;
 pub use tokio_rustls::rustls;
+pub use tokio_tungstenite::tungstenite;
 
 #[derive(Clone)]
 enum MaybeProxyClient {

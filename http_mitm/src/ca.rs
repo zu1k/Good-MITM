@@ -3,12 +3,8 @@ use chrono::{Duration, Utc};
 use http::uri::Authority;
 use moka::future::Cache;
 use rcgen::{DistinguishedName, DnType, KeyPair, RcgenError, SanType};
-use tokio_rustls::rustls:: {
-    self,
-    NoClientAuth, 
-    ServerConfig
-};
 use std::sync::Arc;
+use tokio_rustls::rustls::{self, NoClientAuth, ServerConfig};
 
 /// Issues certificates for use when communicating with clients.
 ///
