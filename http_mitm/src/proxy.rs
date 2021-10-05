@@ -118,8 +118,8 @@ where
                 let authority = req
                     .uri()
                     .authority()
-                    .expect("URI does not contain authority");
-                let server_config = self.ca.gen_server_config(authority).await;
+                    .expect("URI does not contain authority")
+                    .clone();
 
                 match hyper::upgrade::on(req).await {
                     Ok(mut upgraded) => {
@@ -136,9 +136,10 @@ where
 
                         if bytes_read == 4 && buffer == *b"GET " {
                             if let Err(e) = self.serve_websocket(upgraded).await {
-                                error!("websocket connect error: {}", e);
+                                debug!("https connect error for {}: {}", authority, e);
                             }
                         } else {
+                            let server_config = self.ca.gen_server_config(&authority).await;
                             let stream = TlsAcceptor::from(server_config)
                                 .accept(upgraded)
                                 .await
@@ -152,7 +153,7 @@ where
                             }
                         }
                     }
-                    Err(e) => error!("upgrade error: {}", e),
+                    Err(e) => debug!("upgrade error for {}: {}", authority, e),
                 };
             });
         } else {
