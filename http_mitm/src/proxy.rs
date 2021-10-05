@@ -147,7 +147,7 @@ where
                             if let Err(e) = self.serve_https(stream).await {
                                 let e_string = e.to_string();
                                 if !e_string.starts_with("error shutting down connection") {
-                                    error!("https connect error: {}", e);
+                                    debug!("res:: {}", e);
                                 }
                             }
                         }
