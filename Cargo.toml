@@ -21,7 +21,7 @@ bytes = { version = "1", features = ["serde"] }
 clap = "2.33.3"
 env_logger = "0.9"
 fancy-regex = "0.7"
-hudsucker = { path = "hudsucker" }
+http_mitm = { path = "http_mitm" }
 lazy_static = "1.4"
 log = "0.4"
 rcgen = { version = "0.8", features = ["x509-parser"] }

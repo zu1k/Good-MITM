@@ -6,7 +6,7 @@ mod handler;
 mod rule;
 
 use clap::{App, Arg, SubCommand};
-use hudsucker::{rustls::internal::pemfile, *};
+use http_mitm::{rustls::internal::pemfile, *};
 use log::*;
 use std::fs;
 

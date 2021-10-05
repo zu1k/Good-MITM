@@ -1,4 +1,4 @@
-use hudsucker::{async_trait::async_trait, tungstenite::Message, MessageContext, MessageHandler};
+use http_mitm::{async_trait::async_trait, tungstenite::Message, MessageContext, MessageHandler};
 
 #[derive(Clone)]
 pub struct NoopMessageHandler {}

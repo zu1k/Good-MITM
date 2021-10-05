@@ -1,5 +1,5 @@
 use crate::rule::{self, Rule};
-use hudsucker::{
+use http_mitm::{
     async_trait::async_trait,
     hyper::{header, Body, Request, Response, Uri},
     HttpContext, HttpHandler, RequestOrResponse,

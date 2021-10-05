@@ -1,2 +1,4 @@
-/target
-/ca
+target
+ca
+.vscode
+.idea

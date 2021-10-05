@@ -382,7 +382,16 @@ version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1a816186fa68d9e426e3cb4ae4dff1fcd8e4a2c34b781bf7a822574a0d0aac8"
 dependencies = [
- "sct",
+ "sct 0.6.1",
+]
+
+[[package]]
+name = "ct-logs"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "362b2bf41dd138704dd7e4f253ecc5026287b0626a29fecbcbcd26cec8130e7d"
+dependencies = [
+ "sct 0.7.0",
 ]
 
 [[package]]
@@ -656,7 +665,7 @@ dependencies = [
  "clap",
  "env_logger",
  "fancy-regex",
- "hudsucker",
+ "http_mitm",
  "lazy_static",
  "log",
  "rcgen",
@@ -747,6 +756,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "http_mitm"
+version = "0.0.1"
+dependencies = [
+ "async-compression",
+ "async-trait",
+ "bytes",
+ "chrono",
+ "ct-logs 0.9.0",
+ "futures",
+ "http",
+ "hyper",
+ "hyper-proxy",
+ "hyper-rustls",
+ "hyper-tungstenite",
+ "log",
+ "moka",
+ "rcgen",
+ "thiserror",
+ "tokio",
+ "tokio-rustls",
+ "tokio-tungstenite",
+ "tokio-util",
+]
+
+[[package]]
 name = "httparse"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -757,33 +791,6 @@ name = "httpdate"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6456b8a6c8f33fee7d958fcd1b60d55b11940a79e63ae87013e6d22e26034440"
-
-[[package]]
-name = "hudsucker"
-version = "0.4.3"
-dependencies = [
- "async-compression",
- "async-trait",
- "bytes",
- "chrono",
- "ct-logs",
- "futures",
- "http",
- "hyper",
- "hyper-proxy",
- "hyper-rustls",
- "hyper-tungstenite",
- "log",
- "moka",
- "rcgen",
- "rustls",
- "thiserror",
- "tokio",
- "tokio-rustls",
- "tokio-tungstenite",
- "tokio-util",
- "webpki-roots",
-]
 
 [[package]]
 name = "humantime"
@@ -840,7 +847,7 @@ version = "0.22.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f9f7a97316d44c0af9b0301e65010573a853a9fc97046d7331d7f6bc0fd5a64"
 dependencies = [
- "ct-logs",
+ "ct-logs 0.8.0",
  "futures-util",
  "hyper",
  "log",
@@ -1453,7 +1460,7 @@ dependencies = [
  "base64",
  "log",
  "ring",
- "sct",
+ "sct 0.6.1",
  "webpki",
 ]
 
@@ -1514,6 +1521,16 @@ name = "sct"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b362b83898e0e69f38515b82ee15aa80636befe47c3b6d3d89a911e78fc228ce"
+dependencies = [
+ "ring",
+ "untrusted",
+]
+
+[[package]]
+name = "sct"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d53dcdb7c9f8158937a7981b48accfd39a43af418591a5d008c7b22b5e1b7ca4"
 dependencies = [
  "ring",
  "untrusted",

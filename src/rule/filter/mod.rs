@@ -1,5 +1,5 @@
 use fancy_regex::Regex;
-use hudsucker::hyper::{Body, Request};
+use http_mitm::hyper::{Body, Request};
 mod mitm_filter;
 pub use mitm_filter::*;
 

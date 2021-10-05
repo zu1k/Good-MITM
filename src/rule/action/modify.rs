@@ -1,4 +1,4 @@
-use hudsucker::hyper::{body::*, header, Body, HeaderMap, Request, Response, StatusCode};
+use http_mitm::hyper::{body::*, header, Body, HeaderMap, Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

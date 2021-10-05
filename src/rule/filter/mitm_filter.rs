@@ -1,4 +1,4 @@
-use hudsucker::{
+use http_mitm::{
     async_trait::async_trait,
     hyper::{Body, Request},
     HttpContext,
@@ -8,7 +8,7 @@ use hudsucker::{
 pub struct MitmFilter {}
 
 #[async_trait]
-impl hudsucker::MitmFilter for MitmFilter {
+impl http_mitm::MitmFilter for MitmFilter {
     async fn filter(&mut self, _ctx: &HttpContext, _req: &Request<Body>) -> bool {
         true
     }

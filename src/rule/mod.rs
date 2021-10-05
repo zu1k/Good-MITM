@@ -4,7 +4,7 @@ pub mod filter;
 
 use action::Action;
 use filter::Filter;
-use hudsucker::{
+use http_mitm::{
     decode_response,
     hyper::{header, header::HeaderValue, Body, Request, Response, StatusCode},
     RequestOrResponse,
