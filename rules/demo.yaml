@@ -2,25 +2,25 @@
   filter:
     domain: 'none.lgf.im'
   action:
-    redirect: "https://lgf.im/"
+    - redirect: "https://lgf.im/"
 
 - name: "redirect regex"
   filter:
     url-regex: 'https://r.lgf.im(.*)'
   action:
-    redirect: "https://lgf.im/$1"
+    - redirect: "https://lgf.im/$1"
 
 - name: "reject CSDN"
   filter:
     domain-keyword: 'csdn'
   action:
-    reject
+    - reject
 
 - name: "modify response header"
   filter:
     domain-suffix: 'lgf.im'
   action:
-    modify-response:
-      header:
-        origin: "2021"
-        new: "2022"
+    - modify-response:
+        header:
+          origin: "2021"
+          new: "2022"

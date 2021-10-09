@@ -19,7 +19,7 @@ lazy_static! {
 #[derive(Debug, Clone)]
 pub struct Rule {
     pub filter: Filter,
-    pub action: Action,
+    pub action: Vec<Action>,
 
     url: Option<String>,
 }
@@ -45,75 +45,85 @@ impl Rule {
     pub async fn do_req(&mut self, req: Request<Body>) -> RequestOrResponse {
         let url = req.uri().to_string();
         self.url = Some(url.clone());
-        match self.action.clone() {
-            Action::Reject => {
-                info!("[Reject] {}", url);
-                let res = Response::builder()
-                    .status(StatusCode::BAD_GATEWAY)
-                    .body(Body::default())
-                    .unwrap();
-                RequestOrResponse::Response(res)
-            }
-            Action::Redirect(target) => {
-                if target.contains('$') {
-                    if let Filter::UrlRegex(re) = self.filter.clone() {
-                        let target = re
-                            .replace(req.uri().to_string().as_str(), target.as_str())
-                            .to_string();
-                        if let Ok(target_url) = HeaderValue::from_str(target.as_str()) {
-                            let mut res = Response::builder()
-                                .status(StatusCode::FOUND)
-                                .body(Body::default())
-                                .unwrap();
-                            res.headers_mut().insert(header::LOCATION, target_url);
-                            info!("[Redirect] {} -> {}", url, target);
-                            return RequestOrResponse::Response(res);
+        let mut tmp_req = req;
+
+        for action in &self.action {
+            match action {
+                Action::Reject => {
+                    info!("[Reject] {}", url);
+                    let res = Response::builder()
+                        .status(StatusCode::BAD_GATEWAY)
+                        .body(Body::default())
+                        .unwrap();
+
+                    return RequestOrResponse::Response(res);
+                }
+
+                Action::Redirect(target) => {
+                    if target.contains('$') {
+                        if let Filter::UrlRegex(re) = self.filter.clone() {
+                            let target = re
+                                .replace(tmp_req.uri().to_string().as_str(), target.as_str())
+                                .to_string();
+                            if let Ok(target_url) = HeaderValue::from_str(target.as_str()) {
+                                let mut res = Response::builder()
+                                    .status(StatusCode::FOUND)
+                                    .body(Body::default())
+                                    .unwrap();
+                                res.headers_mut().insert(header::LOCATION, target_url);
+                                info!("[Redirect] {} -> {}", url, target);
+                                return RequestOrResponse::Response(res);
+                            }
                         }
                     }
-                }
-                return match HeaderValue::from_str(target.as_str()) {
-                    Ok(target_url) => {
+                    if let Ok(target_url) = HeaderValue::from_str(target.as_str()) {
                         let mut res = Response::builder()
                             .status(StatusCode::FOUND)
                             .body(Body::default())
                             .unwrap();
                         res.headers_mut().insert(header::LOCATION, target_url);
                         info!("[Redirect] {} -> {}", url, target);
-                        RequestOrResponse::Response(res)
-                    }
-                    Err(_) => RequestOrResponse::Request(req),
-                };
-            }
-            Action::ModifyRequest(modify) => {
-                info!("[ModifyRequest] {}", url);
-                match modify.modify_req(req).await {
-                    Some(req) => RequestOrResponse::Request(req),
-                    None => RequestOrResponse::Response(
-                        Response::builder()
-                            .status(StatusCode::BAD_REQUEST)
-                            .body(Body::default())
-                            .unwrap(),
-                    ),
+                        return RequestOrResponse::Response(res);
+                    };
                 }
+
+                Action::ModifyRequest(modify) => {
+                    info!("[ModifyRequest] {}", url);
+                    match modify.modify_req(tmp_req).await {
+                        Some(req) => tmp_req = req,
+                        None => {
+                            return RequestOrResponse::Response(
+                                Response::builder()
+                                    .status(StatusCode::BAD_REQUEST)
+                                    .body(Body::default())
+                                    .unwrap(),
+                            );
+                        }
+                    }
+                }
+
+                _ => {}
             }
-            _ => RequestOrResponse::Request(req),
         }
+
+        RequestOrResponse::Request(tmp_req)
     }
 
     pub async fn do_res(&self, res: Response<Body>) -> Response<Body> {
         let url = self.url.clone().unwrap_or_default();
-        match self.action.clone() {
-            Action::ModifyResponse(modify) => {
+        let mut tmp_res = res;
+
+        for action in &self.action {
+            if let Action::ModifyResponse(modify) = action {
                 info!("[ModifyResponse] {}", url);
-                let res = if res.headers().get(header::CONTENT_ENCODING).is_some() {
-                    decode_response(res).unwrap()
-                } else {
-                    res
+                if tmp_res.headers().get(header::CONTENT_ENCODING).is_some() {
+                    tmp_res = decode_response(tmp_res).unwrap()
                 };
-                modify.modify_res(res).await
+                tmp_res = modify.modify_res(tmp_res).await
             }
-            _ => res,
         }
+
+        tmp_res
     }
 }
 

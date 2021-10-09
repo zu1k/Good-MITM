@@ -3,28 +3,28 @@
   filter:
     url-regex: '(^https?:\/\/(?!redirector)[\w-]+\.googlevideo\.com\/(?!dclk_video_ads).+)(ctier=L)(&.+)'
   action:
-    redirect: "$1$4"
+    - redirect: "$1$4"
 
 - name: "youtube-2"
   filter:
     url-regex: '^https?:\/\/[\w-]+\.googlevideo\.com\/(?!(dclk_video_ads|videoplayback\?)).+(&oad|ctier)'
   action:
-    reject
+    - reject
 
 - name: "youtube-3"
   filter:
     url-regex: '^https?:\/\/(www|s)\.youtube\.com\/api\/stats\/ads'
   action:
-    reject
+    - reject
 
 - name: "youtube-4"
   filter:
     url-regex: '^https?:\/\/(www|s)\.youtube\.com\/(pagead|ptracking)'
   action:
-    reject
+    - reject
 
 - name: "youtube-5"
   filter:
     url-regex: '^https?:\/\/\s.youtube.com/api/stats/qoe?.*adformat='
   action:
-    reject
+    - reject

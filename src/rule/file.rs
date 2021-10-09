@@ -6,7 +6,7 @@ use std::{error::Error, fs::File, io::BufReader, path::Path};
 pub struct Rule {
     pub name: String,
     pub filter: Filter,
-    pub action: action::Action,
+    pub action: Vec<action::Action>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
