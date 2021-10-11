@@ -12,6 +12,7 @@ pub struct Rule {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Filter {
+    All,
     Domain(String),
     DomainKeyword(String),
     DomainPrefix(String),

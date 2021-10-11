@@ -5,6 +5,7 @@ pub use mitm_filter::*;
 
 #[derive(Debug, Clone)]
 pub enum Filter {
+    All,
     Domain(String),
     DomainKeyword(String),
     DomainPrefix(String),
@@ -14,6 +15,10 @@ pub enum Filter {
 
 #[allow(dead_code)]
 impl Filter {
+    pub fn new_all() -> Self {
+        Self::All
+    }
+
     pub fn new_domain(s: &str) -> Self {
         Self::Domain(s.to_lowercase())
     }
@@ -38,6 +43,7 @@ impl Filter {
     pub fn is_match_req(&self, req: &Request<Body>) -> bool {
         let host = req.uri().host().unwrap_or_default().to_lowercase();
         match self {
+            Self::All => true,
             Self::Domain(target) => host == *target,
             Self::DomainKeyword(target) => host.contains(target),
             Self::DomainPrefix(target) => host.starts_with(target),

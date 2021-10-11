@@ -27,6 +27,7 @@ pub struct Rule {
 impl From<file::Rule> for Rule {
     fn from(rule: file::Rule) -> Self {
         let filter = match rule.filter {
+            file::Filter::All => Filter::new_all(),
             file::Filter::Domain(s) => Filter::new_domain(s.as_str()),
             file::Filter::DomainKeyword(s) => Filter::new_domain_keyword(s.as_str()),
             file::Filter::DomainPrefix(s) => Filter::new_domain_prefix(s.as_str()),
@@ -102,6 +103,11 @@ impl Rule {
                     }
                 }
 
+                Action::LogReq => {
+                    info!("[LogRequest] {}", url);
+                    action::log_req(&tmp_req).await;
+                }
+
                 _ => {}
             }
         }
@@ -114,12 +120,19 @@ impl Rule {
         let mut tmp_res = res;
 
         for action in &self.action {
-            if let Action::ModifyResponse(modify) = action {
-                info!("[ModifyResponse] {}", url);
-                if tmp_res.headers().get(header::CONTENT_ENCODING).is_some() {
-                    tmp_res = decode_response(tmp_res).unwrap()
-                };
-                tmp_res = modify.modify_res(tmp_res).await
+            match action {
+                Action::ModifyResponse(modify) => {
+                    info!("[ModifyResponse] {}", url);
+                    if tmp_res.headers().get(header::CONTENT_ENCODING).is_some() {
+                        tmp_res = decode_response(tmp_res).unwrap()
+                    };
+                    tmp_res = modify.modify_res(tmp_res).await
+                }
+                Action::LogRes => {
+                    info!("[LogResponse] {}", url);
+                    action::log_res(&tmp_res).await;
+                }
+                _ => {}
             }
         }
 

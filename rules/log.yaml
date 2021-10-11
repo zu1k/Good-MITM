@@ -1,0 +1,5 @@
+- name: "log"
+  filter: all
+  action:
+    - log-req
+    - log-res

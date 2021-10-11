@@ -1,6 +1,9 @@
 mod modify;
 use modify::*;
 
+mod log;
+pub use self::log::*;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -10,4 +13,6 @@ pub enum Action {
     Redirect(String),
     ModifyRequest(Modify),
     ModifyResponse(Modify),
+    LogRes,
+    LogReq,
 }
