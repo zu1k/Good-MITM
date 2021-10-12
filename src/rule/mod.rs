@@ -36,7 +36,10 @@ impl From<file::Rule> for Rule {
         };
         Self {
             filter,
-            action: rule.action,
+            action: match rule.action {
+                file::Actions::Action(action) => vec![action],
+                file::Actions::MultiActions(actions) => actions,
+            },
             url: None,
         }
     }

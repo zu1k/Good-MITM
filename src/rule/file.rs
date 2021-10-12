@@ -6,7 +6,14 @@ use std::{error::Error, fs::File, io::BufReader, path::Path};
 pub struct Rule {
     pub name: String,
     pub filter: Filter,
-    pub action: Vec<action::Action>,
+    pub action: Actions,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum Actions {
+    Action(action::Action),
+    MultiActions(Vec<action::Action>),
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
