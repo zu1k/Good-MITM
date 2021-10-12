@@ -5,31 +5,8 @@
 [![GitHub issues](https://img.shields.io/github/issues/zu1k/good-mitm)](https://github.com/zu1k/good-mitm/issues)
 [![Build](https://github.com/zu1k/good-mitm/actions/workflows/build.yml/badge.svg)](https://github.com/zu1k/good-mitm/actions/workflows/build.yml)
 [![GitHub license](https://img.shields.io/github/license/zu1k/good-mitm)](https://github.com/zu1k/good-mitm/blob/master/LICENSE)
-[![Docs](https://img.shields.io/badge/docs-read-blue.svg?style=flat)](https://good-mitm.lgf.im)
 
 Use MITM technology to provide features like `rewrite`, `redirect`, `reject`.
-
-## Usage
-
-### Certificate Preparation
-
-For MITM functionality, it is required that you trust the self-signed root certificate.
-
-#### Generate your own root certificate
-
-For security reasons, you need to generate your own root certificate.
-
-```shell
-good-mitm.exe genca
-```
-
-#### Trust your root certificate
-
-You need to trust the root certificate just generated, either by adding trust in your browser or in your operating system's root certificate list, as you wish.
-
-### Use the proxy provided by `good-MITM`
-
-Adding `http` and `https` proxies to the browser, `http://127.0.0.1:34567` if not modified.
 
 ## Thanks
 
