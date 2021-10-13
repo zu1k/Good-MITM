@@ -4,4 +4,5 @@
 * [Rule 规则](rule/README.md)
   * [Filter 筛选器](rule/filter.md)
   * [Action 动作](rule/action.md)
+  * [Modify 修改器](rule/modify.md)
 * [其他](others.md)
