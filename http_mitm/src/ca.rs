@@ -3,7 +3,10 @@ use chrono::{Duration, Utc};
 use http::uri::Authority;
 use moka::future::Cache;
 use rcgen::{DistinguishedName, DnType, KeyPair, RcgenError, SanType};
-use std::sync::Arc;
+use std::{
+    sync::{Arc, Mutex},
+    time::{SystemTime, UNIX_EPOCH},
+};
 use tokio_rustls::rustls::{self, NoClientAuth, ServerConfig};
 
 /// Issues certificates for use when communicating with clients.
@@ -16,6 +19,7 @@ pub struct CertificateAuthority {
     private_key: rustls::PrivateKey,
     ca_cert: rustls::Certificate,
     cache: Cache<Authority, Arc<ServerConfig>>,
+    serial_number: Arc<Mutex<u64>>,
 }
 
 impl CertificateAuthority {
@@ -32,6 +36,7 @@ impl CertificateAuthority {
             private_key,
             ca_cert,
             cache: Cache::new(cache_size),
+            serial_number: Arc::new(Mutex::new(now_seconds())),
         };
 
         ca.validate()?;
@@ -63,6 +68,14 @@ impl CertificateAuthority {
     fn gen_cert(&self, authority: &Authority) -> rustls::Certificate {
         let now = Utc::now();
         let mut params = rcgen::CertificateParams::default();
+
+        {
+            let serial_number = Arc::clone(&self.serial_number);
+            let mut serial_number = serial_number.lock().unwrap();
+            params.serial_number = Some(*serial_number);
+            *serial_number = *serial_number + 1;
+        }
+
         params.not_before = now - Duration::weeks(104);
         params.not_after = now + Duration::weeks(104);
         params
@@ -87,6 +100,7 @@ impl CertificateAuthority {
             .expect("Failed to generate CA certificate");
 
         let cert = rcgen::Certificate::from_params(params).expect("Failed to generate certificate");
+
         rustls::Certificate(
             cert.serialize_der_with_signer(&ca_cert)
                 .expect("Failed to serialize certificate"),
@@ -98,4 +112,12 @@ impl CertificateAuthority {
         rcgen::CertificateParams::from_ca_cert_der(&self.ca_cert.0, key_pair)?;
         Ok(())
     }
+}
+
+fn now_seconds() -> u64 {
+    let start = SystemTime::now();
+    let since_the_epoch = start
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+    since_the_epoch.as_secs()
 }
