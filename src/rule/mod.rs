@@ -18,25 +18,21 @@ lazy_static! {
 
 #[derive(Debug, Clone)]
 pub struct Rule {
-    pub filter: Filter,
-    pub action: Vec<Action>,
+    pub filters: Vec<Filter>,
+    pub actions: Vec<Action>,
 
     url: Option<String>,
 }
 
 impl From<file::Rule> for Rule {
     fn from(rule: file::Rule) -> Self {
-        let filter = match rule.filter {
-            file::Filter::All => Filter::new_all(),
-            file::Filter::Domain(s) => Filter::new_domain(s.as_str()),
-            file::Filter::DomainKeyword(s) => Filter::new_domain_keyword(s.as_str()),
-            file::Filter::DomainPrefix(s) => Filter::new_domain_prefix(s.as_str()),
-            file::Filter::DomainSuffix(s) => Filter::new_domain_suffix(s.as_str()),
-            file::Filter::UrlRegex(re) => Filter::new_url_regex(re.as_str()),
+        let filters = match rule.filters {
+            file::Filters::Filter(filter) => vec![Filter::from(filter)],
+            file::Filters::MultiFilters(filters) => filters.into_iter().map(Filter::from).collect(),
         };
         Self {
-            filter,
-            action: match rule.action {
+            filters,
+            actions: match rule.actions {
                 file::Actions::Action(action) => vec![action],
                 file::Actions::MultiActions(actions) => actions,
             },
@@ -51,7 +47,7 @@ impl Rule {
         self.url = Some(url.clone());
         let mut tmp_req = req;
 
-        for action in &self.action {
+        for action in &self.actions {
             match action {
                 Action::Reject => {
                     info!("[Reject] {}", url);
@@ -65,18 +61,20 @@ impl Rule {
 
                 Action::Redirect(target) => {
                     if target.contains('$') {
-                        if let Filter::UrlRegex(re) = self.filter.clone() {
-                            let target = re
-                                .replace(tmp_req.uri().to_string().as_str(), target.as_str())
-                                .to_string();
-                            if let Ok(target_url) = HeaderValue::from_str(target.as_str()) {
-                                let mut res = Response::builder()
-                                    .status(StatusCode::FOUND)
-                                    .body(Body::default())
-                                    .unwrap();
-                                res.headers_mut().insert(header::LOCATION, target_url);
-                                info!("[Redirect] {} -> {}", url, target);
-                                return RequestOrResponse::Response(res);
+                        for filter in self.filters.clone() {
+                            if let Filter::UrlRegex(re) = filter {
+                                let target = re
+                                    .replace(tmp_req.uri().to_string().as_str(), target.as_str())
+                                    .to_string();
+                                if let Ok(target_url) = HeaderValue::from_str(target.as_str()) {
+                                    let mut res = Response::builder()
+                                        .status(StatusCode::FOUND)
+                                        .body(Body::default())
+                                        .unwrap();
+                                    res.headers_mut().insert(header::LOCATION, target_url);
+                                    info!("[Redirect] {} -> {}", url, target);
+                                    return RequestOrResponse::Response(res);
+                                }
                             }
                         }
                     }
@@ -122,7 +120,7 @@ impl Rule {
         let url = self.url.clone().unwrap_or_default();
         let mut tmp_res = res;
 
-        for action in &self.action {
+        for action in &self.actions {
             match action {
                 Action::ModifyResponse(modify) => {
                     info!("[ModifyResponse] {}", url);
@@ -146,8 +144,10 @@ impl Rule {
 pub fn match_rule(req: &Request<Body>) -> Option<Rule> {
     let rules = RULES.read().unwrap();
     for rule in rules.iter() {
-        if rule.filter.is_match_req(req) {
-            return Some(rule.clone());
+        for filter in &rule.filters {
+            if filter.is_match_req(req) {
+                return Some(rule.clone());
+            }
         }
     }
     None

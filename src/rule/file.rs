@@ -5,8 +5,17 @@ use std::{error::Error, fs::File, io::BufReader, path::Path};
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Rule {
     pub name: String,
-    pub filter: Filter,
-    pub action: Actions,
+    #[serde(alias = "filter")]
+    pub filters: Filters,
+    #[serde(alias = "action")]
+    pub actions: Actions,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum Filters {
+    Filter(Filter),
+    MultiFilters(Vec<Filter>),
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

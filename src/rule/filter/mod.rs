@@ -1,6 +1,7 @@
 use fancy_regex::Regex;
 use http_mitm::hyper::{Body, Request};
 mod mitm_filter;
+use super::file;
 pub use mitm_filter::*;
 
 #[derive(Debug, Clone)]
@@ -52,6 +53,19 @@ impl Filter {
                 let url = req.uri().to_string();
                 re.is_match(&url).unwrap()
             }
+        }
+    }
+}
+
+impl From<super::file::Filter> for Filter {
+    fn from(f: file::Filter) -> Self {
+        match f {
+            file::Filter::All => Filter::new_all(),
+            file::Filter::Domain(s) => Filter::new_domain(s.as_str()),
+            file::Filter::DomainKeyword(s) => Filter::new_domain_keyword(s.as_str()),
+            file::Filter::DomainPrefix(s) => Filter::new_domain_prefix(s.as_str()),
+            file::Filter::DomainSuffix(s) => Filter::new_domain_suffix(s.as_str()),
+            file::Filter::UrlRegex(re) => Filter::new_url_regex(re.as_str()),
         }
     }
 }

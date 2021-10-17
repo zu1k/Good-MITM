@@ -1,31 +1,31 @@
 - name: "奈菲影视去广告"
-  filter:
+  filters:
     url-regex: '(nfmovies)(?!.*?(\.css|\.js|\.jpeg|\.png|\.gif)).*'
-  action:
+  actions:
     modify-response:
       body:
         origin: '<head>'
         new: '<link rel="stylesheet" href="https://limbopro.com/CSS/nfmovies.css" type="text/css"><script type="text/javascript"  src="//limbopro.com/Adguard/nfmovies.js"></script></head>'
 
 - name: "低端影视去广告"
-  filter:
+  filters:
     domain-prefix: 'ddrk.me'
-  action:
+  actions:
     modify-response:
       body:
         origin: '<head>'
         new: '<head><link rel="stylesheet" href="https://limbopro.com/CSS/ddrk.css" type="text/css"><script type="text/javascript" src="//limbopro.com/Adguard/ddrk.js"></script>'
 
 - name: "www.pianku.li 片库网"
-  filter:
+  filters:
     domain-keyword: 'pianku'
-  action:
+  actions:
     modify-response:
       body:
         origin: '</body>'
         new: '<link rel="stylesheet" href="https://limbopro.com/CSS/mypianku.css" type="text/css"><script type="text/javascript" src="//limbopro.com/Adguard/mypianku.js"></script></body>'
 
 - name: "m.yhdm.io 樱花动漫"
-  filter:
+  filters:
     url-regex: '^http:\/\/m\.yhdm\.io\/bar\/yfgg\.js'
-  action: reject
+  actions: reject
