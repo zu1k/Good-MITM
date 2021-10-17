@@ -1,5 +1,5 @@
 use crate::Error;
-use async_compression::tokio::bufread::{BrotliDecoder, GzipDecoder, ZlibDecoder};
+use async_compression::tokio::bufread::{BrotliDecoder, GzipDecoder, ZlibDecoder, ZstdDecoder};
 use bytes::Bytes;
 use futures::{Stream, TryStreamExt};
 use http::header::{CONTENT_ENCODING, CONTENT_LENGTH};
@@ -34,6 +34,10 @@ enum Decoder {
 
 impl Decoder {
     pub fn decode(self, encoding: &str) -> Result<Self, Error> {
+        if encoding == "identity" {
+            return Ok(self);
+        }
+
         let reader: Box<dyn AsyncBufRead + Send + Unpin> = match self {
             Decoder::Body(body) => Box::new(StreamReader::new(IoStream(body.into_stream()))),
             Decoder::Decoder(decoder) => Box::new(BufReader::new(decoder)),
@@ -43,16 +47,19 @@ impl Decoder {
             "gzip" | "x-gzip" => Box::new(GzipDecoder::new(reader)),
             "deflate" => Box::new(ZlibDecoder::new(reader)),
             "br" => Box::new(BrotliDecoder::new(reader)),
+            "zstd" => Box::new(ZstdDecoder::new(reader)),
             _ => return Err(Error::Decode),
         };
 
         Ok(Decoder::Decoder(decoder))
     }
+}
 
-    pub fn into_inner(self) -> Result<Box<dyn AsyncRead + Send + Unpin>, Error> {
-        match self {
-            Decoder::Body(_) => Err(Error::Decode),
-            Decoder::Decoder(decoder) => Ok(decoder),
+impl From<Decoder> for Body {
+    fn from(decoder: Decoder) -> Body {
+        match decoder {
+            Decoder::Body(body) => body,
+            Decoder::Decoder(decoder) => Body::wrap_stream(ReaderStream::new(decoder)),
         }
     }
 }
@@ -84,20 +91,11 @@ pub fn decode_response(res: Response<Body>) -> Result<Response<Body>, Error> {
         }
     }
 
-    if encodings.is_empty() {
-        return Ok(Response::from_parts(parts, body));
-    }
-
     let mut decoder = Decoder::Body(body);
 
     while let Some(encoding) = encodings.pop() {
         decoder = decoder.decode(&encoding)?;
     }
 
-    Ok(Response::from_parts(
-        parts,
-        Body::wrap_stream(ReaderStream::new(
-            decoder.into_inner().expect("Should not be Err"),
-        )),
-    ))
+    Ok(Response::from_parts(parts, decoder.into()))
 }

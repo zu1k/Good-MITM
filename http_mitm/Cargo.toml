@@ -4,7 +4,7 @@ version = "0.0.1"
 edition = "2018"
 
 [dependencies]
-async-compression = { version = "0.3", features = ["tokio", "brotli", "gzip", "zlib"] }
+async-compression = { version = "0.3", features = ["tokio", "brotli", "gzip", "zlib", "zstd"] }
 async-trait = "0.1"
 bytes = "1"
 chrono = "0.4"

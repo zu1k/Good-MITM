@@ -56,6 +56,7 @@ where
         };
 
         req.headers_mut().remove(http::header::HOST);
+        req.headers_mut().remove(http::header::ACCEPT_ENCODING);
 
         let req = match self.http_handler.handle_request(&ctx, req).await {
             RequestOrResponse::Request(req) => req,
