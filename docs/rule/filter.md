@@ -87,3 +87,19 @@
     url-regex: '^https?:\/\/(www|s)\.youtube\.com\/(pagead|ptracking)'
   action: reject
 ```
+
+## 多个筛选器
+
+`filters`字段支持单个筛选器和多个筛选器，多个筛选器之间的关系为`或`
+
+```yaml
+- name: "youtube-2"
+  filters:
+    - url-regex: '^https?:\/\/[\w-]+\.googlevideo\.com\/(?!(dclk_video_ads|videoplayback\?)).+(&oad|ctier)'
+    - url-regex: '^https?:\/\/(www|s)\.youtube\.com\/api\/stats\/ads'
+    - url-regex: '^https?:\/\/(www|s)\.youtube\.com\/(pagead|ptracking)'
+    - url-regex: '^https?:\/\/\s.youtube.com/api/stats/qoe?.*adformat='
+  action: reject
+```
+
+具有相同动作的多个规则可聚合为一个规则以便于维护

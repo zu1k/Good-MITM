@@ -50,13 +50,13 @@
 
 ## 多个动作
 
-`action`字段支持单个动作和多个动作，当需要执行多个动作时，应使用数组
+`actions`字段支持单个动作和多个动作，当需要执行多个动作时，应使用数组
 
 ```yaml
 - name: "youtube-1"
   filter:
     url-regex: '(^https?:\/\/(?!redirector)[\w-]+\.googlevideo\.com\/(?!dclk_video_ads).+)(ctier=L)(&.+)'
-  action:
+  actions:
     - log-req:
     - redirect: "$1$4"
 ```

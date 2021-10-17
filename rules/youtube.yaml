@@ -6,21 +6,9 @@
     redirect: "$1$4"
 
 - name: "youtube-2"
-  filter:
-    url-regex: '^https?:\/\/[\w-]+\.googlevideo\.com\/(?!(dclk_video_ads|videoplayback\?)).+(&oad|ctier)'
-  action: reject
-
-- name: "youtube-3"
-  filter:
-    url-regex: '^https?:\/\/(www|s)\.youtube\.com\/api\/stats\/ads'
-  action: reject
-
-- name: "youtube-4"
-  filter:
-    url-regex: '^https?:\/\/(www|s)\.youtube\.com\/(pagead|ptracking)'
-  action: reject
-
-- name: "youtube-5"
-  filter:
-    url-regex: '^https?:\/\/\s.youtube.com/api/stats/qoe?.*adformat='
+  filters:
+    - url-regex: '^https?:\/\/[\w-]+\.googlevideo\.com\/(?!(dclk_video_ads|videoplayback\?)).+(&oad|ctier)'
+    - url-regex: '^https?:\/\/(www|s)\.youtube\.com\/api\/stats\/ads'
+    - url-regex: '^https?:\/\/(www|s)\.youtube\.com\/(pagead|ptracking)'
+    - url-regex: '^https?:\/\/\s.youtube.com/api/stats/qoe?.*adformat='
   action: reject
