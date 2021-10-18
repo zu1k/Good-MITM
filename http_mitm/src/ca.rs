@@ -53,14 +53,11 @@ impl CertificateAuthority {
 
         let certs = vec![self.gen_cert(authority)];
 
-        let mut server_cfg = ServerConfig::builder()
+        let server_cfg = ServerConfig::builder()
             .with_safe_defaults()
             .with_no_client_auth()
             .with_single_cert(certs, self.private_key.clone())
             .expect("Failed to set certificate");
-
-        server_cfg.alpn_protocols = vec![b"http/1.1".to_vec()];
-
         let server_cfg = Arc::new(server_cfg);
 
         self.cache
@@ -81,8 +78,8 @@ impl CertificateAuthority {
             *serial_number += 1;
         }
 
-        params.not_before = now - Duration::weeks(104);
-        params.not_after = now + Duration::weeks(104);
+        params.not_before = now - Duration::weeks(1);
+        params.not_after = now + Duration::weeks(52);
         params
             .subject_alt_names
             .push(SanType::DnsName(authority.host().to_string()));

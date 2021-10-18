@@ -1312,7 +1312,6 @@ version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b5ac6078ca424dc1d3ae2328526a76787fecc7f8011f520e3276730e711fc95"
 dependencies = [
- "log",
  "ring",
  "sct 0.7.0",
  "webpki 0.22.0",
