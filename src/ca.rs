@@ -4,23 +4,20 @@ use rcgen::*;
 use std::fs;
 
 pub fn gen_ca() {
-    let subject_alt_names = vec!["*".to_string()];
-    let mut param = CertificateParams::new(subject_alt_names);
+    let mut params = CertificateParams::default();
     let mut distinguished_name = DistinguishedName::new();
     distinguished_name.push(DnType::CommonName, "Good-MITM");
     distinguished_name.push(DnType::OrganizationName, "Good-MITM");
-    param.distinguished_name = distinguished_name;
-    param.key_usages = vec![
+    distinguished_name.push(DnType::CountryName, "CN");
+    distinguished_name.push(DnType::LocalityName, "CN");
+    params.distinguished_name = distinguished_name;
+    params.key_usages = vec![
         KeyUsagePurpose::DigitalSignature,
-        KeyUsagePurpose::ContentCommitment,
-        KeyUsagePurpose::KeyEncipherment,
-        KeyUsagePurpose::DataEncipherment,
-        KeyUsagePurpose::KeyAgreement,
         KeyUsagePurpose::KeyCertSign,
         KeyUsagePurpose::CrlSign,
     ];
-    param.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
-    let cert = Certificate::from_params(param).unwrap();
+    params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
+    let cert = Certificate::from_params(params).unwrap();
     let cert_crt = cert.serialize_pem().unwrap();
 
     fs::create_dir("ca").unwrap();

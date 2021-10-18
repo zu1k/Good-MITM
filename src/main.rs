@@ -6,8 +6,9 @@ mod handler;
 mod rule;
 
 use clap::{App, Arg, SubCommand};
-use http_mitm::{rustls::internal::pemfile, *};
+use http_mitm::*;
 use log::*;
+use rustls_pemfile as pemfile;
 use std::fs;
 
 async fn shutdown_signal() {
@@ -22,11 +23,12 @@ async fn run(key_path: &str, cert_path: &str, bind: &str) {
     let ca_cert_bytes = fs::read(cert_path).expect("ca cert file path not valid!");
 
     let private_key = pemfile::pkcs8_private_keys(&mut private_key_bytes.as_slice())
-        .expect("Failed to parse private key")
-        .remove(0);
-    let ca_cert = pemfile::certs(&mut ca_cert_bytes.as_slice())
-        .expect("Failed to parse CA certificate")
-        .remove(0);
+        .expect("Failed to parse private key");
+
+    let private_key = rustls::PrivateKey(private_key[0].clone());
+    let ca_cert =
+        pemfile::certs(&mut ca_cert_bytes.as_slice()).expect("Failed to parse CA certificate");
+    let ca_cert = rustls::Certificate(ca_cert[0].clone());
 
     let ca = CertificateAuthority::new(private_key, ca_cert, 1_000)
         .expect("Failed to create Certificate Authority");

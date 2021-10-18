@@ -2,12 +2,15 @@ use crate::Error;
 use chrono::{Duration, Utc};
 use http::uri::Authority;
 use moka::future::Cache;
-use rcgen::{DistinguishedName, DnType, KeyPair, RcgenError, SanType};
+use rcgen::{
+    DistinguishedName, DnType, ExtendedKeyUsagePurpose, KeyPair, KeyUsagePurpose, RcgenError,
+    SanType,
+};
 use std::{
     sync::{Arc, Mutex},
     time::{SystemTime, UNIX_EPOCH},
 };
-use tokio_rustls::rustls::{self, NoClientAuth, ServerConfig};
+use tokio_rustls::rustls::{self, ServerConfig};
 
 /// Issues certificates for use when communicating with clients.
 ///
@@ -48,13 +51,15 @@ impl CertificateAuthority {
             return server_cfg;
         }
 
-        let mut server_cfg = ServerConfig::new(NoClientAuth::new());
         let certs = vec![self.gen_cert(authority)];
 
-        server_cfg
-            .set_single_cert(certs, self.private_key.clone())
+        let mut server_cfg = ServerConfig::builder()
+            .with_safe_defaults()
+            .with_no_client_auth()
+            .with_single_cert(certs, self.private_key.clone())
             .expect("Failed to set certificate");
-        server_cfg.set_protocols(&[b"http/1.1".to_vec()]);
+
+        server_cfg.alpn_protocols = vec![b"http/1.1".to_vec()];
 
         let server_cfg = Arc::new(server_cfg);
 
@@ -73,7 +78,7 @@ impl CertificateAuthority {
             let serial_number = Arc::clone(&self.serial_number);
             let mut serial_number = serial_number.lock().unwrap();
             params.serial_number = Some(*serial_number);
-            *serial_number = *serial_number + 1;
+            *serial_number += 1;
         }
 
         params.not_before = now - Duration::weeks(104);
@@ -84,6 +89,9 @@ impl CertificateAuthority {
         let mut distinguished_name = DistinguishedName::new();
         distinguished_name.push(DnType::CommonName, authority.host());
         params.distinguished_name = distinguished_name;
+
+        params.key_usages = vec![KeyUsagePurpose::DigitalSignature];
+        params.extended_key_usages = vec![ExtendedKeyUsagePurpose::ServerAuth];
 
         let key_pair = KeyPair::from_der(&self.private_key.0).expect("Failed to parse private key");
         params.alg = key_pair
