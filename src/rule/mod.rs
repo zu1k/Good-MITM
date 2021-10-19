@@ -26,16 +26,10 @@ pub struct Rule {
 
 impl From<file::Rule> for Rule {
     fn from(rule: file::Rule) -> Self {
-        let filters = match rule.filters {
-            file::Filters::Filter(filter) => vec![Filter::from(filter)],
-            file::Filters::MultiFilters(filters) => filters.into_iter().map(Filter::from).collect(),
-        };
+        let filters = rule.filters.into_iter().map(Filter::from).collect();
         Self {
             filters,
-            actions: match rule.actions {
-                file::Actions::Action(action) => vec![action],
-                file::Actions::MultiActions(actions) => actions,
-            },
+            actions: rule.actions.to_vec(),
             url: None,
         }
     }

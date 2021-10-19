@@ -1,4 +1,5 @@
 use super::action;
+use good_mitm::utils::SingleOrMulti;
 use serde::{Deserialize, Serialize};
 use std::{error::Error, fs::File, io::BufReader, path::Path};
 
@@ -6,23 +7,9 @@ use std::{error::Error, fs::File, io::BufReader, path::Path};
 pub struct Rule {
     pub name: String,
     #[serde(alias = "filter")]
-    pub filters: Filters,
+    pub filters: SingleOrMulti<Filter>,
     #[serde(alias = "action")]
-    pub actions: Actions,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(untagged)]
-pub enum Filters {
-    Filter(Filter),
-    MultiFilters(Vec<Filter>),
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(untagged)]
-pub enum Actions {
-    Action(action::Action),
-    MultiActions(Vec<action::Action>),
+    pub actions: SingleOrMulti<action::Action>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
