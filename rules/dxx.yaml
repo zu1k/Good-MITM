@@ -1,0 +1,6 @@
+- name: "dxx"
+  filter:
+    url-regex: '^https:\/\/dxxsv\.cyol\.com.*\.mp4'
+  action:
+    redirect: "https://1s.video.lgf.im/1s.mp4"
+
