@@ -1,4 +1,4 @@
-# Good Man in the Middle
+四月# Good Man in the Middle
 
 [![GitHub stars](https://img.shields.io/github/stars/zu1k/good-mitm)](https://github.com/zu1k/good-mitm/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/zu1k/good-mitm)](https://github.com/zu1k/good-mitm/network)
@@ -7,33 +7,39 @@
 [![GitHub license](https://img.shields.io/github/license/zu1k/good-mitm)](https://github.com/zu1k/good-mitm/blob/master/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-read-blue.svg?style=flat)](https://good-mitm.lgf.im)
 
-Use MITM technology to provide features like `rewrite`, `redirect`, `reject`.
+利用`MITM`技术实现请求和返回的`重写`、`重定向`、`阻断`等操作
 
-## Usage
+## 使用方法
 
-### Certificate Preparation
+这里仅介绍最基本的使用流程，具体使用方法和规则请查看[文档](https://good-mitm.lgf.im)
 
-For MITM functionality, it is required that you trust the self-signed root certificate.
+### 证书准备
 
-#### Generate your own root certificate
+由于`MITM`技术的需要，需要你生成并信任自己的根证书
 
-For security reasons, you need to generate your own root certificate.
+### 生成根证书
+
+出于安全考虑，请不要随意信任任何陌生人提供的根证书，你需要自己生成属于自己的根证书和私钥
 
 ```shell
 good-mitm.exe genca
 ```
 
-#### Trust your root certificate
+上面命令将会生成私钥和证书，文件将存储在`ca`文件夹下
 
-You need to trust the root certificate just generated, either by adding trust in your browser or in your operating system's root certificate list, as you wish.
+### 信任证书
 
-### Use the proxy provided by `good-MITM`
+你可以将根证书添加到操作系统或者浏览器的信任区中，根据你的需要自行选择
 
-Adding `http` and `https` proxies to the browser, `http://127.0.0.1:34567` if not modified.
+### 代理
 
-## Thanks
+启动Good-MITM，指定使用的规则
 
-- [**hudsucker**](https://github.com/omjadas/hudsucker): a Rust crate providing MITM features
+```shell
+good-mitm.exe run -r rules/ads.yaml
+```
+
+在浏览器或操作系统中使用Good-MITM提供的http代理：`http://127.0.0.1:34567`
 
 ## License
 
