@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 #[macro_use]
 extern crate lazy_static;
 
@@ -84,8 +86,8 @@ fn main() {
                     Arg::with_name("rule")
                         .short("r")
                         .long("rule")
-                        .help("rule file")
-                        .long_help("load rules from file")
+                        .help("rule file or dir")
+                        .long_help("load rules from file or dir")
                         .takes_value(true)
                         .required(true),
                 )
@@ -110,13 +112,13 @@ fn main() {
     match matches.subcommand_name() {
         Some("run") => {
             let matches = matches.subcommand_matches("run").unwrap();
-            let rule_file = matches
+            let rule_file_or_dir = matches
                 .value_of("rule")
                 .expect("rule file path should not be none");
             let bind = matches
                 .value_of("bind")
                 .expect("bind address should not be none");
-            if let Err(err) = rule::add_rule_file(rule_file) {
+            if let Err(err) = rule::add_rules_from_file_or_dir(rule_file_or_dir) {
                 error!("parse rule file failed, err: {}", err);
                 std::process::exit(3);
             }

@@ -147,9 +147,11 @@ pub fn match_rule(req: &Request<Body>) -> Option<Rule> {
     None
 }
 
-pub fn add_rule_file<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn std::error::Error>> {
+pub fn add_rules_from_file_or_dir<P: AsRef<Path>>(
+    path: P,
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut rules = RULES.write().unwrap();
-    match file::read_rules_from_file(path) {
+    match file::read_rules_from_firl_or_dir(path) {
         Ok(rules_config) => {
             for rule in rules_config {
                 rules.push(Rule::from(rule));

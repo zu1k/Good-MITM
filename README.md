@@ -33,10 +33,10 @@ good-mitm.exe genca
 
 ### 代理
 
-启动Good-MITM，指定使用的规则
+启动Good-MITM，指定使用的规则文件或目录
 
 ```shell
-good-mitm.exe run -r rules/ads.yaml
+good-mitm.exe run -r rules
 ```
 
 在浏览器或操作系统中使用Good-MITM提供的http代理：`http://127.0.0.1:34567`
