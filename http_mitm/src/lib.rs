@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 mod ca;
 mod decoder;
 mod error;

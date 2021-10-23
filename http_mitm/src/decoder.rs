@@ -3,7 +3,10 @@ use async_compression::tokio::bufread::{BrotliDecoder, GzipDecoder, ZlibDecoder,
 use bytes::Bytes;
 use futures::{Stream, TryStreamExt};
 use http::header::{CONTENT_ENCODING, CONTENT_LENGTH};
-use hyper::{Body, Error as HyperError, Response};
+use hyper::{
+    header::{HeaderMap, HeaderValue},
+    Body, Error as HyperError, Request, Response,
+};
 use std::{
     io,
     io::Error as IoError,
@@ -64,15 +67,10 @@ impl From<Decoder> for Body {
     }
 }
 
-/// Decode the body of a response.
-///
-/// This will fail if either of the `content-encoding` or `content-length` headers are unable to be
-/// parsed, or if one of the values specified in the `content-encoding` header is not supported.
-pub fn decode_response(res: Response<Body>) -> Result<Response<Body>, Error> {
-    let (mut parts, body) = res.into_parts();
+fn extract_encodings(headers: &mut HeaderMap<HeaderValue>) -> Result<Vec<String>, Error> {
     let mut encodings: Vec<String> = vec![];
 
-    for val in parts.headers.get_all(CONTENT_ENCODING) {
+    for val in headers.get_all(CONTENT_ENCODING) {
         match val.to_str() {
             Ok(val) => {
                 encodings.extend(val.split(',').map(|v| String::from(v.trim())));
@@ -81,7 +79,54 @@ pub fn decode_response(res: Response<Body>) -> Result<Response<Body>, Error> {
         }
     }
 
-    parts.headers.remove(CONTENT_ENCODING);
+    headers.remove(CONTENT_ENCODING);
+    Ok(encodings)
+}
+
+fn decode_body(mut encodings: Vec<String>, body: Body) -> Result<Body, Error> {
+    let mut decoder = Decoder::Body(body);
+
+    while let Some(encoding) = encodings.pop() {
+        decoder = decoder.decode(&encoding)?;
+    }
+
+    Ok(decoder.into())
+}
+
+/// Decode the body of a request.
+///
+/// This will fail if either of the `content-encoding` or `content-length` headers are unable to be
+/// parsed, or if one of the values specified in the `content-encoding` header is not supported.
+pub fn decode_request(req: Request<Body>) -> Result<Request<Body>, Error> {
+    let (mut parts, body) = req.into_parts();
+    let encodings: Vec<String> = extract_encodings(&mut parts.headers)?;
+
+    if encodings.is_empty() {
+        return Ok(Request::from_parts(parts, body));
+    }
+
+    if let Some(val) = parts.headers.remove(CONTENT_LENGTH) {
+        match val.to_str() {
+            Ok("0") => return Ok(Request::from_parts(parts, body)),
+            Err(_) => return Err(Error::Decode),
+            _ => (),
+        }
+    }
+
+    Ok(Request::from_parts(parts, decode_body(encodings, body)?))
+}
+
+/// Decode the body of a response.
+///
+/// This will fail if either of the `content-encoding` or `content-length` headers are unable to be
+/// parsed, or if one of the values specified in the `content-encoding` header is not supported.
+pub fn decode_response(res: Response<Body>) -> Result<Response<Body>, Error> {
+    let (mut parts, body) = res.into_parts();
+    let encodings: Vec<String> = extract_encodings(&mut parts.headers)?;
+
+    if encodings.is_empty() {
+        return Ok(Response::from_parts(parts, body));
+    }
 
     if let Some(val) = parts.headers.remove(CONTENT_LENGTH) {
         match val.to_str() {
@@ -91,11 +136,5 @@ pub fn decode_response(res: Response<Body>) -> Result<Response<Body>, Error> {
         }
     }
 
-    let mut decoder = Decoder::Body(body);
-
-    while let Some(encoding) = encodings.pop() {
-        decoder = decoder.decode(&encoding)?;
-    }
-
-    Ok(Response::from_parts(parts, decoder.into()))
+    Ok(Response::from_parts(parts, decode_body(encodings, body)?))
 }
