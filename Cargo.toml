@@ -9,7 +9,7 @@ homepage = "https://github.com/zu1k/good-mitm"
 repository = "https://github.com/zu1k/good-mitm"
 license = "MIT"
 keywords = ["proxy", "MITM"]
-exclude = [".github/"]
+exclude = [".github/", "docs/", "rules/"]
 
 [profile.release]
 lto = true
