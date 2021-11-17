@@ -32,8 +32,13 @@ async fn run(key_path: &str, cert_path: &str, bind: &str) {
         pemfile::certs(&mut ca_cert_bytes.as_slice()).expect("Failed to parse CA certificate");
     let ca_cert = rustls::Certificate(ca_cert[0].clone());
 
-    let ca = CertificateAuthority::new(private_key, ca_cert, 1_000)
-        .expect("Failed to create Certificate Authority");
+    let ca = CertificateAuthority::new(
+        private_key,
+        ca_cert,
+        String::from_utf8(ca_cert_bytes).unwrap(),
+        1_000,
+    )
+    .expect("Failed to create Certificate Authority");
 
     let proxy_config = ProxyConfig {
         listen_addr: bind.parse().expect("bind address not valid!"),

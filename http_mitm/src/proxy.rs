@@ -55,6 +55,20 @@ where
             client_addr: self.client_addr,
         };
 
+        if let Some(host) = req.headers().get(http::header::HOST) {
+            if host.to_str().unwrap_or_default() == "good-mitm.com" {
+                return Ok(Response::builder()
+                    .header(
+                        http::header::CONTENT_DISPOSITION,
+                        "attachment; filename=good-mitm.crt",
+                    )
+                    .header(http::header::CONTENT_TYPE, "application/octet-stream")
+                    .status(http::StatusCode::OK)
+                    .body(Body::from(self.ca.clone().get_cert()))
+                    .unwrap());
+            }
+        }
+
         req.headers_mut().remove(http::header::HOST);
         req.headers_mut().remove(http::header::ACCEPT_ENCODING);
 

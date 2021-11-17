@@ -1,0 +1,6 @@
+- name: "log-bili"
+  filter:
+    domain-keyword: "bili"
+  action:
+    - log-req
+    - log-res

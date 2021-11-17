@@ -21,6 +21,7 @@ use tokio_rustls::rustls::{self, ServerConfig};
 pub struct CertificateAuthority {
     private_key: rustls::PrivateKey,
     ca_cert: rustls::Certificate,
+    ca_cert_string: String,
     cache: Cache<Authority, Arc<ServerConfig>>,
     serial_number: Arc<Mutex<u64>>,
 }
@@ -33,11 +34,13 @@ impl CertificateAuthority {
     pub fn new(
         private_key: rustls::PrivateKey,
         ca_cert: rustls::Certificate,
+        ca_cert_string: String,
         cache_size: usize,
     ) -> Result<CertificateAuthority, Error> {
         let ca = CertificateAuthority {
             private_key,
             ca_cert,
+            ca_cert_string,
             cache: Cache::new(cache_size),
             serial_number: Arc::new(Mutex::new(now_seconds())),
         };
@@ -116,6 +119,10 @@ impl CertificateAuthority {
         let key_pair = rcgen::KeyPair::from_der(&self.private_key.0)?;
         rcgen::CertificateParams::from_ca_cert_der(&self.ca_cert.0, key_pair)?;
         Ok(())
+    }
+
+    pub fn get_cert(&self) -> String {
+        self.ca_cert_string.clone()
     }
 }
 
