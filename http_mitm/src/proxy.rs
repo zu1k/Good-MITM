@@ -3,7 +3,7 @@ use crate::{
     MessageHandler, MitmFilter, RequestOrResponse, Rewind,
 };
 use futures::{Sink, SinkExt, Stream, StreamExt};
-use http::uri::PathAndQuery;
+use http::{uri::PathAndQuery, HeaderValue};
 use hyper::{
     server::conn::Http, service::service_fn, upgrade::Upgraded, Body, Method, Request, Response,
     Uri,
@@ -39,11 +39,14 @@ where
     F1: MitmFilter,
 {
     pub(crate) async fn proxy(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
-        if req.method() == Method::CONNECT {
+        match if req.method() == Method::CONNECT {
             // https
             self.process_connect(req).await
         } else {
             self.process_request(req).await
+        } {
+            Ok(resp) => Ok(allow_all_cros(resp)),
+            Err(e) => Err(e),
         }
     }
 
@@ -312,4 +315,14 @@ fn spawn_message_forwarder(
             }
         }
     });
+}
+
+fn allow_all_cros(resp: Response<Body>) -> Response<Body> {
+    let mut resp = resp;
+    let header = resp.headers_mut();
+    let all = HeaderValue::from_str("*").unwrap();
+    header.insert(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, all.clone());
+    header.insert(http::header::ACCESS_CONTROL_ALLOW_METHODS, all.clone());
+    header.insert(http::header::ACCESS_CONTROL_ALLOW_METHODS, all);
+    resp
 }

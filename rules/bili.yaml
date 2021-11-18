@@ -1,6 +1,9 @@
 - name: "log-bili"
   filter:
-    domain-keyword: "bili"
+    url-regex: '^https?:\/\/cn-sdjn-fx-bcache-.*\.bilivideo\.com\/(.*)'
   action:
     - log-req
-    - log-res
+    - redirect: "https://upos-sz-mirrorcos.bilivideo.com/$1"
+
+
+        # "https://cn-hk-eq-bcache-06.bilivideo.com/"
