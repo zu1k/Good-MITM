@@ -4,6 +4,3 @@
   action:
     - log-req
     - redirect: "https://upos-sz-mirrorcos.bilivideo.com/$1"
-
-
-        # "https://cn-hk-eq-bcache-06.bilivideo.com/"

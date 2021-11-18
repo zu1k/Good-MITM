@@ -59,7 +59,9 @@ where
         };
 
         if let Some(host) = req.headers().get(http::header::HOST) {
-            if host.to_str().unwrap_or_default() == "good-mitm.com" {
+            if host.to_str().unwrap_or_default() == "good-mitm.com"
+                && req.method() == http::method::Method::GET
+            {
                 return Ok(Response::builder()
                     .header(
                         http::header::CONTENT_DISPOSITION,
