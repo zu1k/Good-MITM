@@ -1,6 +1,6 @@
 [package]
 name = "good-mitm"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["zu1k <i@lgf.im>"]
 edition = "2021"
 description = "Use MITM technology to provide features like rewrite, redirect."
