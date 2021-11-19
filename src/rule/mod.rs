@@ -26,7 +26,7 @@ pub struct Rule {
 
 impl From<file::Rule> for Rule {
     fn from(rule: file::Rule) -> Self {
-        let filters: Vec<Filter> = rule.filters.into_iter().map(Filter::from).collect();
+        let filters: Vec<Filter> = rule.filters.into_iter().map(Filter::init).collect();
         let mitm_list: Vec<String> = filters
             .iter()
             .filter_map(Filter::mitm_filtter_pattern)
@@ -152,11 +152,9 @@ pub fn match_rule(req: &Request<Body>) -> Option<Rule> {
     None
 }
 
-pub fn add_rules_from_file_or_dir<P: AsRef<Path>>(
-    path: P,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn add_rules_from_fs<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn std::error::Error>> {
     let mut rules = RULES.write().unwrap();
-    match file::read_rules_from_firl_or_dir(path) {
+    match file::read_rules_from_fs(path) {
         Ok(rules_config) => {
             let mut rules_tmp = rules_config.into_iter().map(Rule::from).collect();
             rules.append(&mut rules_tmp);

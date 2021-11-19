@@ -1,4 +1,4 @@
-use super::action;
+use super::{action, Filter};
 use good_mitm::utils::SingleOrMulti;
 use serde::{Deserialize, Serialize};
 use std::{error::Error, fs, io::BufReader, path::Path};
@@ -12,25 +12,14 @@ pub struct Rule {
     pub actions: SingleOrMulti<action::Action>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum Filter {
-    All,
-    Domain(String),
-    DomainKeyword(String),
-    DomainPrefix(String),
-    DomainSuffix(String),
-    UrlRegex(String),
-}
-
-pub fn read_rules_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<Rule>, Box<dyn Error>> {
+fn read_rules_from_file<P: AsRef<Path>>(path: P) -> Result<Vec<Rule>, Box<dyn Error>> {
     let file = fs::File::open(path)?;
     let reader = BufReader::new(file);
     let rules = serde_yaml::from_reader(reader)?;
     Ok(rules)
 }
 
-pub fn read_rules_from_dir<P: AsRef<Path>>(path: P) -> Result<Vec<Rule>, Box<dyn Error>> {
+fn read_rules_from_dir<P: AsRef<Path>>(path: P) -> Result<Vec<Rule>, Box<dyn Error>> {
     let mut rules = vec![];
     let dir = fs::read_dir(path).expect("Not a valid dir");
     for entry in dir.flatten() {
@@ -45,7 +34,7 @@ pub fn read_rules_from_dir<P: AsRef<Path>>(path: P) -> Result<Vec<Rule>, Box<dyn
     Ok(rules)
 }
 
-pub fn read_rules_from_firl_or_dir<P: AsRef<Path>>(path: P) -> Result<Vec<Rule>, Box<dyn Error>> {
+pub fn read_rules_from_fs<P: AsRef<Path>>(path: P) -> Result<Vec<Rule>, Box<dyn Error>> {
     let m = fs::metadata(&path).expect("Not a valid path");
     if m.file_type().is_dir() {
         read_rules_from_dir(path)

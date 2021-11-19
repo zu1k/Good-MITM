@@ -123,7 +123,7 @@ fn main() {
             let bind = matches
                 .value_of("bind")
                 .expect("bind address should not be none");
-            if let Err(err) = rule::add_rules_from_file_or_dir(rule_file_or_dir) {
+            if let Err(err) = rule::add_rules_from_fs(rule_file_or_dir) {
                 error!("parse rule file failed, err: {}", err);
                 std::process::exit(3);
             }

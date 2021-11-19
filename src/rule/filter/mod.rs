@@ -1,44 +1,43 @@
+use std::{collections::HashMap, sync::RwLock};
+
 use fancy_regex::Regex;
 use http_mitm::hyper::{Body, Request};
 mod mitm_filter;
-use super::file;
 pub use mitm_filter::*;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+lazy_static! {
+    static ref REGEX_CACHE: RwLock<HashMap<String, Regex>> = RwLock::from(HashMap::default());
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
 pub enum Filter {
     All,
     Domain(String),
     DomainKeyword(String),
     DomainPrefix(String),
     DomainSuffix(String),
-    UrlRegex(fancy_regex::Regex),
+    UrlRegex(String),
 }
 
 #[allow(dead_code)]
 impl Filter {
-    pub fn new_all() -> Self {
-        Self::All
-    }
-
-    pub fn new_domain(s: &str) -> Self {
-        Self::Domain(s.to_lowercase())
-    }
-
-    pub fn new_domain_keyword(s: &str) -> Self {
-        Self::DomainKeyword(s.to_lowercase())
-    }
-
-    pub fn new_domain_prefix(s: &str) -> Self {
-        Self::DomainPrefix(s.to_lowercase())
-    }
-
-    pub fn new_domain_suffix(s: &str) -> Self {
-        Self::DomainSuffix(s.to_lowercase())
-    }
-
-    pub fn new_url_regex(s: &str) -> Self {
-        let r = Regex::new(s).unwrap();
-        Self::UrlRegex(r)
+    pub fn init(self) -> Self {
+        match self {
+            Filter::All => self,
+            Filter::Domain(d) => Self::Domain(d.to_lowercase()),
+            Filter::DomainKeyword(d) => Self::DomainKeyword(d.to_lowercase()),
+            Filter::DomainPrefix(d) => Self::DomainPrefix(d.to_lowercase()),
+            Filter::DomainSuffix(d) => Self::DomainSuffix(d.to_lowercase()),
+            Filter::UrlRegex(re) => {
+                REGEX_CACHE
+                    .write()
+                    .unwrap()
+                    .insert(re.clone(), Regex::new(&re).unwrap());
+                Self::UrlRegex(re)
+            }
+        }
     }
 
     pub fn is_match_req(&self, req: &Request<Body>) -> bool {
@@ -49,9 +48,10 @@ impl Filter {
             Self::DomainKeyword(target) => host.contains(target),
             Self::DomainPrefix(target) => host.starts_with(target),
             Self::DomainSuffix(target) => host.ends_with(target),
-            Self::UrlRegex(re) => {
+            Self::UrlRegex(target) => {
                 let url = req.uri().to_string();
-                re.is_match(&url).unwrap()
+                let list = REGEX_CACHE.read().unwrap();
+                list.get(target).unwrap().is_match(&url).unwrap()
             }
         }
     }
@@ -64,19 +64,6 @@ impl Filter {
             Self::DomainPrefix(d) => Some(format!("{}*", d)),
             Self::DomainSuffix(d) => Some(format!("*{}", d)),
             _ => None,
-        }
-    }
-}
-
-impl From<super::file::Filter> for Filter {
-    fn from(f: file::Filter) -> Self {
-        match f {
-            file::Filter::All => Filter::new_all(),
-            file::Filter::Domain(s) => Filter::new_domain(s.as_str()),
-            file::Filter::DomainKeyword(s) => Filter::new_domain_keyword(s.as_str()),
-            file::Filter::DomainPrefix(s) => Filter::new_domain_prefix(s.as_str()),
-            file::Filter::DomainSuffix(s) => Filter::new_domain_suffix(s.as_str()),
-            file::Filter::UrlRegex(re) => Filter::new_url_regex(re.as_str()),
         }
     }
 }
