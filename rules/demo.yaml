@@ -5,6 +5,7 @@
     redirect: "https://lgf.im/"
 
 - name: "redirect regex"
+  mitm: "*.lgf.im"
   filter:
     url-regex: 'https://r.lgf.im(.*)'
   action:

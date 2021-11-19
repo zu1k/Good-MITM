@@ -1,4 +1,5 @@
 - name: "奈菲影视去广告"
+  mitm: "*nfmovies*"
   filters:
     url-regex: '(nfmovies)(?!.*?(\.css|\.js|\.jpeg|\.png|\.gif)).*'
   actions:

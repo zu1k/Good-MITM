@@ -1,4 +1,5 @@
 - name: "dxx"
+  mitm: "dxxsv.cyol.com"
   filter:
     url-regex: '^https:\/\/dxxsv\.cyol\.com.*\.mp4'
   action:

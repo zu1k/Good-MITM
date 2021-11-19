@@ -83,6 +83,7 @@
 
 ```yaml
 - name: "youtube追踪"
+  mitm: "*.youtube.com"
   filter:
     url-regex: '^https?:\/\/(www|s)\.youtube\.com\/(pagead|ptracking)'
   action: reject
@@ -94,6 +95,9 @@
 
 ```yaml
 - name: "youtube-2"
+  mitm:
+    - "*.youtube.com"
+    - "*.googlevideo.com"
   filters:
     - url-regex: '^https?:\/\/[\w-]+\.googlevideo\.com\/(?!(dclk_video_ads|videoplayback\?)).+(&oad|ctier)'
     - url-regex: '^https?:\/\/(www|s)\.youtube\.com\/api\/stats\/ads'

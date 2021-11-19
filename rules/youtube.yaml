@@ -1,11 +1,15 @@
 # Youtube Ads
 - name: "youtube-1"
+  mitm: "*.googlevideo.com"
   filter:
     url-regex: '(^https?:\/\/(?!redirector)[\w-]+\.googlevideo\.com\/(?!dclk_video_ads).+)(ctier=L)(&.+)'
   action:
     redirect: "$1$4"
 
 - name: "youtube-2"
+  mitm:
+    - "*.youtube.com"
+    - "*.googlevideo.com"
   filters:
     - url-regex: '^https?:\/\/[\w-]+\.googlevideo\.com\/(?!(dclk_video_ads|videoplayback\?)).+(&oad|ctier)'
     - url-regex: '^https?:\/\/(www|s)\.youtube\.com\/api\/stats\/ads'

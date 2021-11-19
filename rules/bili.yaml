@@ -1,4 +1,5 @@
 - name: "log-bili"
+  mitm: "*bilivideo.com"
   filter:
     url-regex: '^https?:\/\/cn-sdjn-fx-bcache-.*\.bilivideo\.com\/(.*)'
   action:

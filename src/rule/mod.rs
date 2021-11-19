@@ -27,11 +27,22 @@ pub struct Rule {
 impl From<file::Rule> for Rule {
     fn from(rule: file::Rule) -> Self {
         let filters: Vec<Filter> = rule.filters.into_iter().map(Filter::init).collect();
-        let mitm_list: Vec<String> = filters
-            .iter()
-            .filter_map(Filter::mitm_filtter_pattern)
-            .collect();
-        filter::mitm_list_append(mitm_list);
+
+        {
+            // append mitm list
+            let mitm_list: Vec<String> = filters
+                .iter()
+                .filter_map(Filter::mitm_filtter_pattern)
+                .collect();
+            filter::mitm_list_append(mitm_list);
+
+            let mitm_list = match rule.mitm_list {
+                Some(s) => s.into_iter().collect(),
+                None => vec![],
+            };
+            filter::mitm_list_append(mitm_list);
+        }
+
         Self {
             filters,
             actions: rule.actions.to_vec(),

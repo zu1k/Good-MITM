@@ -6,6 +6,8 @@ use std::{error::Error, fs, io::BufReader, path::Path};
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Rule {
     pub name: String,
+    #[serde(alias = "mitm")]
+    pub mitm_list: Option<SingleOrMulti<String>>,
     #[serde(alias = "filter")]
     pub filters: SingleOrMulti<Filter>,
     #[serde(alias = "action")]
