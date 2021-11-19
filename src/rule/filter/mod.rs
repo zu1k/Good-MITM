@@ -55,6 +55,17 @@ impl Filter {
             }
         }
     }
+
+    pub fn mitm_filtter_pattern(&self) -> Option<String> {
+        match self {
+            Self::All => Some("*".to_owned()),
+            Self::Domain(d) => Some(d.to_owned()),
+            Self::DomainKeyword(d) => Some(format!("*{}*", d)),
+            Self::DomainPrefix(d) => Some(format!("{}*", d)),
+            Self::DomainSuffix(d) => Some(format!("*{}", d)),
+            _ => None,
+        }
+    }
 }
 
 impl From<super::file::Filter> for Filter {

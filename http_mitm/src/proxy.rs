@@ -10,7 +10,7 @@ use hyper::{
 };
 use log::*;
 use std::{net::SocketAddr, sync::Arc};
-use tokio::io::AsyncReadExt;
+use tokio::{io::AsyncReadExt, net::TcpStream};
 use tokio_rustls::TlsAcceptor;
 use tokio_tungstenite::{connect_async, tungstenite, tungstenite::Message, WebSocketStream};
 
@@ -177,7 +177,11 @@ where
                 };
             });
         } else {
-            tokio::task::spawn(async move {});
+            tokio::task::spawn(async move {
+                let remote_addr = host_addr(req.uri()).unwrap();
+                let upgraded = hyper::upgrade::on(req).await.unwrap();
+                tunnel(upgraded, remote_addr).await
+            });
         }
         Ok(Response::new(Body::empty()))
     }
@@ -327,4 +331,14 @@ fn allow_all_cros(resp: Response<Body>) -> Response<Body> {
     header.insert(http::header::ACCESS_CONTROL_ALLOW_METHODS, all.clone());
     header.insert(http::header::ACCESS_CONTROL_ALLOW_METHODS, all);
     resp
+}
+
+fn host_addr(uri: &http::Uri) -> Option<String> {
+    uri.authority().and_then(|auth| Some(auth.to_string()))
+}
+
+async fn tunnel(mut upgraded: Upgraded, addr: String) -> std::io::Result<()> {
+    let mut server = TcpStream::connect(addr).await?;
+    tokio::io::copy_bidirectional(&mut upgraded, &mut server).await?;
+    Ok(())
 }

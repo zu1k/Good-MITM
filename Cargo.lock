@@ -644,6 +644,7 @@ dependencies = [
  "serde",
  "serde_yaml",
  "tokio",
+ "wildmatch",
 ]
 
 [[package]]
@@ -2130,6 +2131,12 @@ checksum = "d743fdedc5c64377b5fc2bc036b01c7fd642205a0d96356034ae3404d49eb7fb"
 dependencies = [
  "cc",
 ]
+
+[[package]]
+name = "wildmatch"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6c48bd20df7e4ced539c12f570f937c6b4884928a87fee70a479d72f031d4e0"
 
 [[package]]
 name = "winapi"
