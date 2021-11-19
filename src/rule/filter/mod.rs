@@ -1,13 +1,13 @@
-use std::{collections::HashMap, sync::RwLock};
-
 use fancy_regex::Regex;
 use http_mitm::hyper::{Body, Request};
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, sync::RwLock};
+
 mod mitm_filter;
 pub use mitm_filter::*;
-use serde::{Deserialize, Serialize};
 
 lazy_static! {
-    static ref REGEX_CACHE: RwLock<HashMap<String, Regex>> = RwLock::from(HashMap::default());
+    pub static ref REGEX_CACHE: RwLock<HashMap<String, Regex>> = RwLock::from(HashMap::default());
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

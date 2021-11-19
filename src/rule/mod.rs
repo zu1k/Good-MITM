@@ -73,7 +73,11 @@ impl Rule {
                     if target.contains('$') {
                         for filter in self.filters.clone() {
                             if let Filter::UrlRegex(re) = filter {
-                                let target = re
+                                let target = filter::REGEX_CACHE
+                                    .read()
+                                    .unwrap()
+                                    .get(&re)
+                                    .unwrap()
                                     .replace(tmp_req.uri().to_string().as_str(), target.as_str())
                                     .to_string();
                                 if let Ok(target_url) = HeaderValue::from_str(target.as_str()) {

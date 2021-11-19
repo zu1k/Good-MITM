@@ -39,8 +39,9 @@ $(CROSS_TARGET_LIST):
 
 windows:
 	cargo build --target x86_64-pc-windows-gnu --release
-	cp "target/x86_64-pc-windows-gnu/release/$(NAME).exe" "$(BINDIR)/$(NAME)-x86_64-pc-windows-gnu.exe"
-	$(UPX) "$(BINDIR)/$(NAME)-x86_64-pc-windows-gnu.exe"
+	cp "target/x86_64-pc-windows-gnu/release/$(NAME).exe" "$(BINDIR)/$(NAME)-x86_64-pc-windows-gnu-$(VERSION).exe"
+	$(STRIP) "$(BINDIR)/$(NAME)-x86_64-pc-windows-gnu-$(VERSION).exe"
+	zip -q $(BINDIR)/$(NAME)-x86_64-pc-windows-gnu-$(VERSION).zip "$(BINDIR)/$(NAME)-x86_64-pc-windows-gnu-$(VERSION).exe"
 
 bindir:
 	rm -rf $(BINDIR)
@@ -50,8 +51,8 @@ bin_gz=$(addsuffix .gz, $(CROSS_TARGET_LIST))
 
 $(bin_gz): %.gz : %
 	chmod +x $(BINDIR)/$(NAME)-$(basename $@)
-	gzip -f -S -$(VERSION).gz $(BINDIR)/$(NAME)-$(basename $@)
+	gzip -m -$(VERSION).gz $(BINDIR)/$(NAME)-$(basename $@)
 
 gz_release: $(bin_gz)
 
-release: bindir gz_release
+release: bindir gz_release windows
