@@ -59,7 +59,7 @@ where
         };
 
         if let Some(host) = req.headers().get(http::header::HOST) {
-            if host.to_str().unwrap_or_default() == "good-mitm.com"
+            if host.to_str().unwrap_or_default() == "cert.mitm.plus"
                 && req.method() == http::method::Method::GET
             {
                 return Ok(Response::builder()

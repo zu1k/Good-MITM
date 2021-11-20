@@ -6,13 +6,13 @@
 [![GitHub issues](https://img.shields.io/github/issues/zu1k/good-mitm)](https://github.com/zu1k/good-mitm/issues)
 [![Build](https://github.com/zu1k/good-mitm/actions/workflows/build.yml/badge.svg)](https://github.com/zu1k/good-mitm/actions/workflows/build.yml)
 [![GitHub license](https://img.shields.io/github/license/zu1k/good-mitm)](https://github.com/zu1k/good-mitm/blob/master/LICENSE)
-[![Docs](https://img.shields.io/badge/docs-read-blue.svg?style=flat)](https://good-mitm.lgf.im)
+[![Docs](https://img.shields.io/badge/docs-read-blue.svg?style=flat)](https://docs.mitm.plus)
 
 利用`MITM`技术实现请求和返回的`重写`、`重定向`、`阻断`等操作
 
 ## 使用方法
 
-这里仅介绍最基本的使用流程，具体使用方法和规则请查看[文档](https://good-mitm.lgf.im)
+这里仅介绍最基本的使用流程，具体使用方法和规则请查看[文档](https://docs.mitm.plus)
 
 ### 证书准备
 
