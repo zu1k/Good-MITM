@@ -40,7 +40,6 @@ where
 {
     pub(crate) async fn proxy(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         match if req.method() == Method::CONNECT {
-            // https
             self.process_connect(req).await
         } else {
             self.process_request(req).await
@@ -334,7 +333,7 @@ fn allow_all_cros(resp: Response<Body>) -> Response<Body> {
 }
 
 fn host_addr(uri: &http::Uri) -> Option<String> {
-    uri.authority().and_then(|auth| Some(auth.to_string()))
+    uri.authority().map(|auth| auth.to_string())
 }
 
 async fn tunnel(mut upgraded: Upgraded, addr: String) -> std::io::Result<()> {
