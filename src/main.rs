@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 #[macro_use]
 extern crate lazy_static;
 
@@ -7,7 +5,7 @@ mod ca;
 mod handler;
 mod rule;
 
-use clap::{App, Arg, SubCommand};
+use clap::Parser;
 use http_mitm::*;
 use log::*;
 use rustls_pemfile as pemfile;
@@ -17,6 +15,54 @@ async fn shutdown_signal() {
     tokio::signal::ctrl_c()
         .await
         .expect("failed to install CTRL+C signal handler");
+}
+
+#[derive(Parser)]
+#[clap(name = "Good Man in the Middle", version, about, author)]
+struct AppOpts {
+    #[clap(subcommand)]
+    subcmd: SubCommand,
+}
+
+#[derive(Parser)]
+enum SubCommand {
+    /// run proxy serve
+    Run(Run),
+    /// gen your own ca cert and private key
+    Genca,
+}
+
+#[derive(Parser)]
+struct Run {
+    #[clap(
+        short,
+        long,
+        default_value = "ca/private.key",
+        about = "private key file path"
+    )]
+    key: String,
+    #[clap(short, long, default_value = "ca/cert.crt", about = "cert file path")]
+    cert: String,
+    #[clap(short, long, about = "load rules from file or dir")]
+    rule: String,
+    #[clap(short, long, default_value = "127.0.0.1:34567", about = "bind address")]
+    bind: String,
+}
+
+fn main() {
+    env_logger::builder().filter_level(LevelFilter::Info).init();
+
+    let opts = AppOpts::parse();
+    match opts.subcmd {
+        SubCommand::Run(opts) => {
+            if let Err(err) = rule::add_rules_from_fs(opts.rule) {
+                error!("parse rule file failed, err: {}", err);
+                std::process::exit(3);
+            }
+            run(&opts.key, &opts.cert, &opts.bind);
+        }
+        SubCommand::Genca => ca::gen_ca(),
+    }
 }
 
 #[tokio::main]
@@ -53,92 +99,5 @@ async fn run(key_path: &str, cert_path: &str, bind: &str) {
 
     if let Err(e) = start_proxy(proxy_config).await {
         error!("{}", e);
-    }
-}
-
-fn main() {
-    env_logger::builder().filter_level(LevelFilter::Info).init();
-
-    let matches = App::new("Good Man in the Middle")
-        .author("zu1k <i@lgf.im>")
-        .about("Use MITM technology to provide features like rewrite, redirect.")
-        .subcommand(
-            SubCommand::with_name("run")
-                .about("start to run")
-                .display_order(1)
-                .arg(
-                    Arg::with_name("key")
-                        .short("k")
-                        .long("key")
-                        .alias("private")
-                        .help("private key file path")
-                        .long_help("private key file path")
-                        .default_value("ca/private.key")
-                        .takes_value(true)
-                        .required(true),
-                )
-                .arg(
-                    Arg::with_name("cert")
-                        .short("c")
-                        .long("cert")
-                        .help("cert file path")
-                        .long_help("cert file path")
-                        .default_value("ca/cert.crt")
-                        .takes_value(true)
-                        .required(true),
-                )
-                .arg(
-                    Arg::with_name("rule")
-                        .short("r")
-                        .long("rule")
-                        .help("rule file or dir")
-                        .long_help("load rules from file or dir")
-                        .takes_value(true)
-                        .required(true),
-                )
-                .arg(
-                    Arg::with_name("bind")
-                        .short("b")
-                        .long("bind")
-                        .help("bind address")
-                        .long_help("bind address")
-                        .default_value("127.0.0.1:34567")
-                        .takes_value(true)
-                        .required(true),
-                ),
-        )
-        .subcommand(
-            SubCommand::with_name("genca")
-                .display_order(2)
-                .about("generate your own ca private key and certificate"),
-        )
-        .get_matches();
-
-    match matches.subcommand_name() {
-        Some("run") => {
-            let matches = matches.subcommand_matches("run").unwrap();
-            let rule_file_or_dir = matches
-                .value_of("rule")
-                .expect("rule file path should not be none");
-            let bind = matches
-                .value_of("bind")
-                .expect("bind address should not be none");
-            if let Err(err) = rule::add_rules_from_fs(rule_file_or_dir) {
-                error!("parse rule file failed, err: {}", err);
-                std::process::exit(3);
-            }
-
-            let key_path = matches
-                .value_of("key")
-                .expect("need root ca private key file");
-
-            let cert_path = matches.value_of("cert").expect("need root ca cert file");
-
-            run(key_path, cert_path, bind)
-        }
-        Some("genca") => ca::gen_ca(),
-        _ => {
-            println!("subcommand not valid!")
-        }
     }
 }

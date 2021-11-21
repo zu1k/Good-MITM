@@ -1,6 +1,6 @@
 [package]
 name = "good-mitm"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["zu1k <i@lgf.im>"]
 edition = "2021"
 description = "Use MITM technology to provide features like rewrite, redirect."
@@ -18,7 +18,7 @@ codegen-units = 1
 
 [dependencies]
 bytes = { version = "1", features = ["serde"] }
-clap = "2.33"
+clap = "3.0.0-beta.5"
 env_logger = "0.9"
 fancy-regex = "0.7"
 http_mitm = { path = "http_mitm" }

@@ -31,11 +31,12 @@
 
 ```yaml
 - name: "奈菲影视去广告"
-  filter:
+  mitm: "*nfmovies*"
+  filters:
     url-regex: '(nfmovies)(?!.*?(\.css|\.js|\.jpeg|\.png|\.gif)).*'
-  action:
+  actions:
     modify-response:
       body:
         origin: '<head>'
-        new: '<link rel="stylesheet" href="https://limbopro.com/CSS/nfmovies.css" type="text/css"><script type="text javascript"  src="//limbopro.com/Adguard/nfmovies.js"></script></head>'
+        new: '<link rel="stylesheet" href="https://limbopro.com/CSS/nfmovies.css" type="text/css"><script type="text/javascript"  src="//limbopro.com/Adguard/nfmovies.js"></script></head>'
 ```
