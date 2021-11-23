@@ -3,7 +3,7 @@ use crate::{
     MessageHandler, MitmFilter, RequestOrResponse, Rewind,
 };
 use futures::{Sink, SinkExt, Stream, StreamExt};
-use http::{uri::PathAndQuery, HeaderValue};
+use http::{header, uri::PathAndQuery, HeaderValue};
 use hyper::{
     server::conn::Http, service::service_fn, upgrade::Upgraded, Body, Method, Request, Response,
     Uri,
@@ -120,10 +120,14 @@ where
             return Ok(res);
         }
 
-        let res = match self.client {
+        let mut res = match self.client {
             MaybeProxyClient::Proxy(client) => client.request(req).await?,
             MaybeProxyClient::Https(client) => client.request(req).await?,
         };
+
+        // Remove `Strict-Transport-Security` to avoid HSTS
+        // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+        res.headers_mut().remove(header::STRICT_TRANSPORT_SECURITY);
 
         Ok(self.http_handler.handle_response(&ctx, res).await)
     }
