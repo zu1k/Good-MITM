@@ -1,3 +1,6 @@
+use cookie::{Cookie, CookieJar};
+use good_mitm::utils::SingleOrMulti;
+use http::HeaderValue;
 use http_mitm::hyper::{body::*, header, Body, HeaderMap, Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 
@@ -15,11 +18,21 @@ pub struct HeaderModify {
     pub new: String,
 }
 
+#[derive(Default, Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct CookieModify {
+    pub name: String,
+    pub value: String,
+    #[serde(default)]
+    pub remove: bool,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Modify {
     Header(HeaderModify),
-    Cookie,
+    #[serde(alias = "cookie")]
+    Cookies(SingleOrMulti<CookieModify>),
     Body(BodyModify),
 }
 
@@ -58,7 +71,36 @@ impl Modify {
                 self.modify_header(req.headers_mut(), hm);
                 Some(req)
             }
-            _ => Some(req),
+            Modify::Cookies(cookies_mod) => {
+                let mut req = req;
+                let mut cookies_jar = CookieJar::new();
+
+                if let Some(cookies) = req.headers().get(header::COOKIE) {
+                    let cookies = cookies.to_str().unwrap().to_string();
+                    let cookies: Vec<String> = cookies.split("; ").map(String::from).collect();
+                    for c in cookies {
+                        if let Ok(c) = Cookie::parse(c) {
+                            cookies_jar.add(c);
+                        }
+                    }
+                }
+
+                for c in cookies_mod.clone().into_iter() {
+                    if c.remove {
+                        cookies_jar.remove(Cookie::named(c.name))
+                    } else {
+                        cookies_jar.add(Cookie::new(c.name, c.value))
+                    }
+                }
+
+                let cookies: Vec<String> = cookies_jar.iter().map(|c| c.to_string()).collect();
+                let cookies = cookies.join("; ");
+                println!("cookies: {}", cookies);
+                req.headers_mut()
+                    .insert(header::COOKIE, HeaderValue::from_str(&cookies).unwrap());
+
+                Some(req)
+            }
         }
     }
 

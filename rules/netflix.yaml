@@ -1,0 +1,15 @@
+- name: "netflix-cookie"
+  mitm: "*netflix.com"
+  filter:
+    - domain-keyword: "netflix"
+  action:
+    modify-request:
+      cookie:
+        - name: "SecureNetflixId"
+          value: "v%3D2%26mac%3DAQEAEQABABSu8nJZKlXUdvRMtsVE8lmfhojvesPhbx8.%26dt%3D1637673009174"
+        - name: "flwssn"
+          value: "b1d26576-609b-4c2e-9910-f81e0e68bbf0"
+        - name: "nfvdid"
+          value: "BQFmAAEBEAGJHjZlqC06wcZhyfps1GRgP4MadQme32fqpN4zc4fhdTnM3uqCGZ30dUlnYHmHtfvBnxZkTNgWYN90uNs2rF2oYbU6VXXKTPcbCq_fxmUjxuiAFwFdFIt_vjo6SxsxRbkKn08YvCfE8P6MHaISdphf"
+        - name: "NetflixId"
+          value: "v%3D2%26ct%3DBQAOAAEBEEGEw6iWGKs9hf_kgd48vNOB0D9VbpIimQW1Ly54bBTQhBOPeCXBonODEndxioqlfyJIr9FNs9OvnJqQwzVenZomjfgSdVx0vUO6JnDopeIVe_AyI54EouJVdr_Fj7Vd-Wm9Qhh1s1Zvr0ZtQJxi8a1fPZcx_UvVfaCQpLHqjqovKIK71cXlyvVJOVex8jNnur-WYAZhy2NpCxwj1lMjb0yEdU6UvRWq1ggXrUnU59JAS-xblDPax0YcCAJW8CLeFS2-L2E1pANJyyRYtQbaptFPGgHN_XPNcGZuJBn8Ef8c9Ir5lU6ij6eup5y74diLee3ptB4ZRO82PdEQBIMKefKkjvWN6WwPagYgMFynsexJtCMkzoTS3gcrxwSCmtKGZMpHzMRvjUHB2iy9RhpF70cRxyAN_WcPEyr4YMLH62FdI8iz3_ZgLFasaqguQ4CPfP_7hArTP-ygA-1m-OyiI00efMMyfjR3zz5EKgTcn3pCpvanoA1fmXtgoqsWpM4g5g1f_TC99MrPzPN_XXFyL0mgsOKmu0pUsalhjNUTymBRJAlckDQ6tkhjUrom3Za7Xlz3hT7SlxLMJ2f4UuN-HDDboH6eA1k9nWPgGS6c8j0u9LRRDl4vGaPZ7iVOt1Qwxq-v%26bt%3Ddbl%26ch%3DAQEAEAABABSfISmNxuZSOgR7YdmOhTNDx5CZjjq1s5o.%26mac%3DAQEAEAABABTx-4k4n8R5WPm26VtM4X3T5puu3TCWp-A."

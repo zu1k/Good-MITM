@@ -1,9 +1,8 @@
-mod modify;
-use modify::*;
-
 mod log;
-pub use self::log::*;
+mod modify;
 
+pub use self::log::*;
+use modify::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

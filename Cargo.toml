@@ -19,8 +19,10 @@ codegen-units = 1
 [dependencies]
 bytes = { version = "1", features = ["serde"] }
 clap = "3.0.0-beta.5"
+cookie = "0.15"
 env_logger = "0.9"
 fancy-regex = "0.7"
+http = "0.2"
 http_mitm = { path = "http_mitm" }
 lazy_static = "1.4"
 log = "0.4"
