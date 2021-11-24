@@ -24,7 +24,6 @@
           - name: "SecureNetflixId"
             remove: true
           - name: "flwssn"
-            value: "a"
             remove: true
           - name: "nfvdid"
             remove: true
