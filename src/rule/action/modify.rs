@@ -22,6 +22,7 @@ pub struct HeaderModify {
 #[serde(rename_all = "kebab-case")]
 pub struct CookieModify {
     pub name: String,
+    #[serde(default)]
     pub value: String,
     #[serde(default)]
     pub remove: bool,
@@ -95,7 +96,6 @@ impl Modify {
 
                 let cookies: Vec<String> = cookies_jar.iter().map(|c| c.to_string()).collect();
                 let cookies = cookies.join("; ");
-                println!("cookies: {}", cookies);
                 req.headers_mut()
                     .insert(header::COOKIE, HeaderValue::from_str(&cookies).unwrap());
 
@@ -140,7 +140,53 @@ impl Modify {
                 self.modify_header(res.headers_mut(), hm);
                 res
             }
-            _ => res,
+            Modify::Cookies(cookies_mod) => {
+                let mut res = res;
+
+                let mut cookies_jar = CookieJar::new();
+                if let Some(cookies) = res.headers().get(header::COOKIE) {
+                    let cookies = cookies.to_str().unwrap().to_string();
+                    let cookies: Vec<String> = cookies.split("; ").map(String::from).collect();
+                    for c in cookies {
+                        if let Ok(c) = Cookie::parse(c) {
+                            cookies_jar.add(c);
+                        }
+                    }
+                }
+
+                let mut set_cookies_jar = CookieJar::new();
+                let set_cookies = res.headers().get_all(header::SET_COOKIE);
+                for sc in set_cookies {
+                    let sc = sc.to_str().unwrap().to_string();
+                    if let Ok(c) = Cookie::parse(sc) {
+                        set_cookies_jar.add(c)
+                    }
+                }
+
+                for c in cookies_mod.clone().into_iter() {
+                    if c.remove {
+                        cookies_jar.remove(Cookie::named(c.name.clone()));
+                        set_cookies_jar.remove(Cookie::named(c.name));
+                    } else {
+                        cookies_jar.add(Cookie::new(c.name, c.value))
+                    }
+                }
+
+                let cookies: Vec<String> = cookies_jar.iter().map(|c| c.to_string()).collect();
+                let cookies = cookies.join("; ");
+                let header = res.headers_mut();
+                header.insert(header::COOKIE, HeaderValue::from_str(&cookies).unwrap());
+
+                header.remove(header::SET_COOKIE);
+                for sc in set_cookies_jar.iter() {
+                    header.append(
+                        header::SET_COOKIE,
+                        HeaderValue::from_str(&sc.to_string()).unwrap(),
+                    );
+                }
+
+                res
+            }
         }
     }
 
