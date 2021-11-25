@@ -4,7 +4,7 @@
 
 ## 生成CA证书
 
-处于安全考虑，用户必须自己生成自己的CA证书，随意使用不可信的CA证书将会留下严重的安全隐患
+出于安全考虑，用户必须自己生成自己的CA证书，随意使用不可信的CA证书将会留下严重的安全隐患
 
 经验丰富的用户可以自行使用OpenSSL进行相关操作，考虑到没有相关经验的用户，可以使用以下命令直接生成相关内容，生成的证书和私钥将存储在`ca`目录下
 
@@ -12,6 +12,8 @@
 good-mitm.exe genca
 ```
 
+在浏览器使用了Good-MITM提供的代理后，通过访问 [http://cert.mitm.plus](http://cert.mitm.plus) 可以直接下载证书，这在给其他设备提供服务时非常有用
+
 ## 信任生成的证书
 
-You need to trust the root certificate just generated, either by adding trust in your browser or in your operating system's root certificate list, as you wish.
+你需要在浏览器或者操作系统中信任刚刚生成的证书，具体方法后期补充
