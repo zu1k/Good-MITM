@@ -1,0 +1,14 @@
+- name: "log-lgf.im"
+  filter:
+    domain: "lgf.im"
+  action:
+    - log-req
+
+- name: "modify res lgf.im"
+  filter:
+    domain-suffix: "lgf.im"
+  action:
+    modify-response:
+      body:
+        origin: "2021"
+        new: "1980"
