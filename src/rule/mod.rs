@@ -155,16 +155,17 @@ impl Rule {
     }
 }
 
-pub fn match_rule(req: &Request<Body>) -> Option<Rule> {
+pub fn match_rules(req: &Request<Body>) -> Vec<Rule> {
+    let mut matched = vec![];
     let rules = RULES.read().unwrap();
     for rule in rules.iter() {
         for filter in &rule.filters {
             if filter.is_match_req(req) {
-                return Some(rule.clone());
+                matched.push(rule.clone());
             }
         }
     }
-    None
+    matched
 }
 
 pub fn add_rules_from_fs<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn std::error::Error>> {

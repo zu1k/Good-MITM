@@ -9,7 +9,7 @@ use log::info;
 #[derive(Clone, Default)]
 pub struct MitmHandler {
     should_modify_response: bool,
-    rule: Option<Rule>,
+    rule: Vec<Rule>,
     uri: Option<Uri>,
 }
 
@@ -26,18 +26,26 @@ impl HttpHandler for MitmHandler {
         let mut req = req;
         req.headers_mut().remove(header::ACCEPT_ENCODING);
 
-        if let Some(mut rule) = rule::match_rule(&req) {
+        let rules = rule::match_rules(&req);
+        if !rules.is_empty() {
             self.should_modify_response = true;
+        }
+
+        for mut rule in rules {
+            self.rule.push(rule.clone());
             let rt = rule.do_req(req).await;
-            self.rule = Some(rule);
-            return rt;
+            if let RequestOrResponse::Request(r) = rt {
+                req = r;
+            } else {
+                return rt;
+            }
         }
 
         RequestOrResponse::Request(req)
     }
 
     async fn handle_response(&mut self, _ctx: &HttpContext, res: Response<Body>) -> Response<Body> {
-        if !self.should_modify_response || self.rule.is_none() {
+        if !self.should_modify_response || self.rule.is_empty() {
             return res;
         }
         let uri = self.uri.as_ref().unwrap();
@@ -52,7 +60,11 @@ impl HttpHandler for MitmHandler {
             content_type
         );
 
-        let rule = self.rule.clone().unwrap();
-        rule.do_res(res).await
+        let mut res = res;
+        let rules = self.rule.clone();
+        for rule in rules {
+            res = rule.do_res(res).await;
+        }
+        res
     }
 }
