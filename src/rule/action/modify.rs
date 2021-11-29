@@ -1,21 +1,62 @@
 use cookie::{Cookie, CookieJar};
-use good_mitm::utils::SingleOrMulti;
+use enum_dispatch::enum_dispatch;
+use fancy_regex::Regex;
+use good_mitm::{cache, utils::SingleOrMulti};
 use http::HeaderValue;
 use http_mitm::hyper::{body::*, header, Body, HeaderMap, Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct BodyModify {
-    pub origin: String,
-    pub new: String,
+#[enum_dispatch]
+pub trait Replacer {
+    fn replace(&self, origin: &str) -> String;
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct HeaderModify {
-    pub origin: String,
+pub struct Replace {
+    pub origin: Option<String>,
     pub new: String,
+}
+
+impl Replacer for Replace {
+    fn replace(&self, origin: &str) -> String {
+        match self.origin.clone() {
+            Some(ref o) => origin.replace(o, &self.new),
+            None => self.new.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct RegexReplace {
+    pub re: String,
+    pub new: String,
+}
+
+impl Replacer for RegexReplace {
+    fn replace(&self, origin: &str) -> String {
+        if let Some(re) = cache::REGEX.read().unwrap().get(&self.re) {
+            return re.replace_all(origin, &self.new).to_string();
+        }
+        let re = Regex::new(&self.re).unwrap();
+        cache::REGEX
+            .write()
+            .unwrap()
+            .insert(self.re.clone(), re.clone());
+        re.replace(origin, &self.new).to_string()
+    }
+}
+
+#[enum_dispatch(Replacer)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "kebab-case")]
+#[serde(tag = "type")]
+pub enum TextModify {
+    #[serde(rename = "plain")]
+    Replace,
+    #[serde(rename = "regex")]
+    RegexReplace,
 }
 
 #[derive(Default, Debug, Clone, Deserialize, Serialize)]
@@ -31,19 +72,16 @@ pub struct CookieModify {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Modify {
-    Header(HeaderModify),
+    Header(TextModify),
     #[serde(alias = "cookie")]
     Cookies(SingleOrMulti<CookieModify>),
-    Body(BodyModify),
+    Body(TextModify),
 }
 
 impl Modify {
     pub async fn modify_req(&self, req: Request<Body>) -> Option<Request<Body>> {
         match self {
             Modify::Body(bm) => {
-                let origin = bm.origin.as_str();
-                let new = bm.new.as_str();
-
                 let (parts, body) = req.into_parts();
                 if match parts.headers.get(header::CONTENT_TYPE) {
                     Some(content_type) => {
@@ -55,7 +93,7 @@ impl Modify {
                     match to_bytes(body).await {
                         Ok(content) => match String::from_utf8(content.to_vec()) {
                             Ok(text) => {
-                                let text = text.replace(origin, new);
+                                let text = bm.replace(&text);
                                 Some(Request::from_parts(parts, Body::from(text)))
                             }
                             Err(_) => Some(Request::from_parts(parts, Body::from(content))),
@@ -107,9 +145,6 @@ impl Modify {
     pub async fn modify_res(&self, res: Response<Body>) -> Response<Body> {
         match self {
             Self::Body(bm) => {
-                let origin = bm.origin.as_str();
-                let new = bm.new.as_str();
-
                 let (parts, body) = res.into_parts();
                 if match parts.headers.get(header::CONTENT_TYPE) {
                     Some(content_type) => {
@@ -121,7 +156,7 @@ impl Modify {
                     match to_bytes(body).await {
                         Ok(content) => match String::from_utf8(content.to_vec()) {
                             Ok(text) => {
-                                let text = text.replace(origin, new);
+                                let text = bm.replace(&text);
                                 Response::from_parts(parts, Body::from(text))
                             }
                             Err(_) => Response::from_parts(parts, Body::from(content)),
@@ -190,14 +225,12 @@ impl Modify {
         }
     }
 
-    fn modify_header(&self, header: &mut HeaderMap, hm: &HeaderModify) {
-        let origin = hm.origin.as_str();
-        let new = hm.new.as_str();
+    fn modify_header(&self, header: &mut HeaderMap, md: &TextModify) {
         for value in header.values_mut() {
             let text = value.to_str().unwrap().to_string();
-            if text.contains(origin) {
-                let text = text.replace(origin, new);
-                *value = header::HeaderValue::from_str(text.as_str()).unwrap();
+            let new = md.replace(&text);
+            if new != text {
+                *value = header::HeaderValue::from_str(new.as_str()).unwrap();
             }
         }
     }

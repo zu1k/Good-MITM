@@ -4,6 +4,7 @@ pub mod filter;
 
 use action::Action;
 use filter::Filter;
+use good_mitm::cache;
 use http_mitm::{
     decode_response,
     hyper::{header, header::HeaderValue, Body, Request, Response, StatusCode},
@@ -73,7 +74,7 @@ impl Rule {
                     if target.contains('$') {
                         for filter in self.filters.clone() {
                             if let Filter::UrlRegex(re) = filter {
-                                let target = filter::REGEX_CACHE
+                                let target = cache::REGEX
                                     .read()
                                     .unwrap()
                                     .get(&re)

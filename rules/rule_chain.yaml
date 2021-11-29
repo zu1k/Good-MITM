@@ -10,5 +10,6 @@
   action:
     modify-response:
       body:
-        origin: "2021"
-        new: "1980"
+        type: regex
+        re: '(\d{2,6})'
+        new: '(maybe $1 + 1)'

@@ -19,6 +19,7 @@
   action:
     modify-response:
       header:
+        type: plain
         origin: "2021"
         new: "2022"
 ```
@@ -33,6 +34,7 @@
   actions:
     modify-response:
       body:
+        type: plain
         origin: '<head>'
         new: '<link rel="stylesheet" href="https://limbopro.com/CSS/nfmovies.css"......'
 ```

@@ -453,6 +453,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56899898ce76aaf4a0f24d914c97ea6ed976d42fec6ad33fcbb0a1103e07b2b0"
 
 [[package]]
+name = "enum_dispatch"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bd53b3fde38a39a06b2e66dc282f3e86191e53bd04cc499929c15742beae3df8"
+dependencies = [
+ "once_cell",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "env_logger"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -665,6 +677,7 @@ dependencies = [
  "bytes",
  "clap",
  "cookie",
+ "enum_dispatch",
  "env_logger",
  "fancy-regex",
  "http",

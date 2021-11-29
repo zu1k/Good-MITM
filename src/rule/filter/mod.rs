@@ -1,14 +1,10 @@
 use fancy_regex::Regex;
+use good_mitm::cache;
 use http_mitm::hyper::{Body, Request};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, sync::RwLock};
 
 mod mitm_filter;
 pub use mitm_filter::*;
-
-lazy_static! {
-    pub static ref REGEX_CACHE: RwLock<HashMap<String, Regex>> = RwLock::from(HashMap::default());
-}
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -31,7 +27,7 @@ impl Filter {
             Filter::DomainPrefix(d) => Self::DomainPrefix(d.to_lowercase()),
             Filter::DomainSuffix(d) => Self::DomainSuffix(d.to_lowercase()),
             Filter::UrlRegex(re) => {
-                REGEX_CACHE
+                cache::REGEX
                     .write()
                     .unwrap()
                     .insert(re.clone(), Regex::new(&re).unwrap());
@@ -50,7 +46,7 @@ impl Filter {
             Self::DomainSuffix(target) => host.ends_with(target),
             Self::UrlRegex(target) => {
                 let url = req.uri().to_string();
-                let list = REGEX_CACHE.read().unwrap();
+                let list = cache::REGEX.read().unwrap();
                 list.get(target).unwrap().is_match(&url).unwrap()
             }
         }

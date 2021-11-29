@@ -22,5 +22,6 @@
   action:
     modify-response:
       header:
+        type: plain
         origin: "2021"
         new: "2022"
