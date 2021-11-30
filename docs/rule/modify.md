@@ -6,9 +6,46 @@
 
 根据需要修改的内容的位置，修改器分为以下几类：
 
-- Header(HeaderModify)
+- Header(TextModify)
 - Cookie(CookieModify)
-- Body(BodyModify)
+- Body(TextModify)
+
+### TextModify
+
+可以看到Header和Body修改目前都是TextModify类型，目前还仅支持这种方式，其他修改方式仍待开发
+
+`TextModify`主要对文本就行修改，目前支持两种方式：
+
+- `plain`: 普通的替换
+- `regex`: 正则替换
+
+#### plain
+
+对于plain类型的替换，如果origin内容为空，内容将被直接重置为new的内容
+
+```yaml
+- name: "modify response body plain"
+  filters: all
+  actions:
+    modify-response:
+      body:
+        type: plain
+        origin: '1234'
+        new: '5678'
+```
+
+#### regex
+
+```yaml
+- name: "modify response body regex"
+  filters: all
+  actions:
+    modify-response:
+      body:
+        type: regex
+        origin: '(\d{4})'
+        new: 'number: $1'
+```
 
 ### Header修改
 
