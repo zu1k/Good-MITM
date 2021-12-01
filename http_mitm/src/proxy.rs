@@ -58,9 +58,7 @@ where
         };
 
         if let Some(host) = req.headers().get(http::header::HOST) {
-            if host.to_str().unwrap_or_default() == "cert.mitm.plus"
-                && req.method() == http::method::Method::GET
-            {
+            if host.to_str().unwrap_or_default() == "cert.mitm.plus" {
                 return Ok(Response::builder()
                     .header(
                         http::header::CONTENT_DISPOSITION,
