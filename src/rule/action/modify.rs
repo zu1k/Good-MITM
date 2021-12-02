@@ -203,7 +203,9 @@ impl Modify {
                         cookies_jar.remove(Cookie::named(c.name.clone()));
                         set_cookies_jar.remove(Cookie::named(c.name));
                     } else {
-                        cookies_jar.add(Cookie::new(c.name, c.value))
+                        let c = Cookie::new(c.name, c.value);
+                        cookies_jar.add(c.clone());
+                        set_cookies_jar.add(c.clone());
                     }
                 }
 

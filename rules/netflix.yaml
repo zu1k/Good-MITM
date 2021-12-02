@@ -1,7 +1,7 @@
 - name: "netflix-ban-account"
   mitm: "*netflix.com"
   filter:
-    url-regex: '.*netflix\.com.*(profile|Account).*'
+    url-regex: '.*netflix\.com.*(ProfilesGate|SignOut|profile|Account).*'
   action:
     redirect: "/"
 - name: "netflix-cookie"
@@ -29,3 +29,5 @@
             remove: true
           - name: "NetflixId"
             remove: true
+          - name: "profilesNewSession"
+            value: "0"
