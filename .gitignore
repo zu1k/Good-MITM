@@ -1,5 +1,5 @@
-target
-bin
-ca
+/target
+/bin
+/ca
 .vscode
 .idea
