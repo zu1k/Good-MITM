@@ -1,5 +1,5 @@
 use super::{action, Filter};
-use good_mitm::utils::SingleOrMulti;
+use crate::utils::SingleOrMulti;
 use serde::{Deserialize, Serialize};
 use std::{error::Error, fs, io::BufReader, path::Path};
 

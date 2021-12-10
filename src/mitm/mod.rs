@@ -1,11 +1,8 @@
-#![allow(dead_code)]
-mod ca;
 mod decoder;
-mod error;
-mod noop;
 mod proxy;
 mod rewind;
 
+use crate::error::Error;
 use hyper::{
     client::HttpConnector,
     server::conn::AddrStream,
@@ -20,12 +17,10 @@ use tokio_tungstenite::tungstenite::Message;
 
 pub(crate) use rewind::Rewind;
 
-pub use ca::CertificateAuthority;
+pub use crate::ca::CertificateAuthority;
 pub use decoder::decode_response;
-pub use error::Error;
 pub use hyper;
 pub use hyper_proxy;
-pub use noop::*;
 pub use tokio_rustls::rustls;
 pub use tokio_tungstenite::tungstenite;
 

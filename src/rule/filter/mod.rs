@@ -1,5 +1,5 @@
+use crate::utils::cache;
 use fancy_regex::Regex;
-use good_mitm::cache;
 use hyper::{Body, Request};
 use serde::{Deserialize, Serialize};
 

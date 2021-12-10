@@ -1,4 +1,4 @@
-use super::Error;
+use crate::error::Error;
 use async_compression::tokio::bufread::{BrotliDecoder, GzipDecoder, ZlibDecoder, ZstdDecoder};
 use bytes::Bytes;
 use futures::{Stream, TryStreamExt};

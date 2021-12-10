@@ -1,10 +1,14 @@
+#![allow(dead_code)]
+
 #[macro_use]
 extern crate lazy_static;
 
 mod ca;
+mod error;
 mod handler;
 mod mitm;
 mod rule;
+pub mod utils;
 
 use clap::Parser;
 use log::*;
@@ -91,7 +95,7 @@ async fn run(key_path: &str, cert_path: &str, bind: &str) {
         listen_addr: bind.parse().expect("bind address not valid!"),
         shutdown_signal: shutdown_signal(),
         http_handler: handler::MitmHandler::default(),
-        message_handler: crate::mitm::NoopMessageHandler::new(),
+        message_handler: crate::handler::NoopMessageHandler::new(),
         mitm_filter: rule::filter::MitmFilter::default(),
         upstream_proxy: None,
         ca,

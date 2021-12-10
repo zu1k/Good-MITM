@@ -1,9 +1,11 @@
 use crate::{
+    mitm::{MessageContext, MessageHandler},
     rule::{self, Rule},
     HttpContext, HttpHandler, RequestOrResponse,
 };
 use async_trait::async_trait;
 use hyper::{header, Body, Request, Response, Uri};
+use hyper_tungstenite::tungstenite::Message;
 use log::info;
 
 #[derive(Clone, Default)]
@@ -66,5 +68,21 @@ impl HttpHandler for MitmHandler {
             res = rule.do_res(res).await;
         }
         res
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
+pub struct NoopMessageHandler {}
+
+impl NoopMessageHandler {
+    pub fn new() -> Self {
+        NoopMessageHandler {}
+    }
+}
+
+#[async_trait]
+impl MessageHandler for NoopMessageHandler {
+    async fn handle_message(&mut self, _ctx: &MessageContext, msg: Message) -> Option<Message> {
+        Some(msg)
     }
 }

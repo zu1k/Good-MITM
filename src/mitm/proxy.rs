@@ -1,7 +1,8 @@
 use super::{
-    ca::CertificateAuthority, HttpContext, HttpHandler, MaybeProxyClient, MessageContext,
-    MessageHandler, MitmFilter, RequestOrResponse, Rewind,
+    HttpContext, HttpHandler, MaybeProxyClient, MessageContext, MessageHandler, MitmFilter,
+    RequestOrResponse, Rewind,
 };
+use crate::ca::CertificateAuthority;
 use futures::{Sink, SinkExt, Stream, StreamExt};
 use http::{header, uri::PathAndQuery, HeaderValue};
 use hyper::{
