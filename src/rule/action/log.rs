@@ -1,4 +1,4 @@
-use http_mitm::hyper::{Body, Request, Response};
+use hyper::{Body, Request, Response};
 use log::info;
 use std::fmt::Write;
 

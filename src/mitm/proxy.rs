@@ -1,5 +1,5 @@
-use crate::{
-    CertificateAuthority, HttpContext, HttpHandler, MaybeProxyClient, MessageContext,
+use super::{
+    ca::CertificateAuthority, HttpContext, HttpHandler, MaybeProxyClient, MessageContext,
     MessageHandler, MitmFilter, RequestOrResponse, Rewind,
 };
 use futures::{Sink, SinkExt, Stream, StreamExt};
@@ -15,28 +15,25 @@ use tokio_rustls::TlsAcceptor;
 use tokio_tungstenite::{connect_async, tungstenite, tungstenite::Message, WebSocketStream};
 
 #[derive(Clone)]
-pub(crate) struct Proxy<H, M1, M2, F1>
+pub(crate) struct Proxy<H, M, MF>
 where
     H: HttpHandler,
-    M1: MessageHandler,
-    M2: MessageHandler,
-    F1: MitmFilter,
+    M: MessageHandler,
+    MF: MitmFilter,
 {
     pub ca: Arc<CertificateAuthority>,
     pub client: MaybeProxyClient,
     pub http_handler: H,
-    pub incoming_message_handler: M1,
-    pub outgoing_message_handler: M2,
-    pub mitm_filter: F1,
+    pub message_handler: M,
+    pub mitm_filter: MF,
     pub client_addr: SocketAddr,
 }
 
-impl<H, M1, M2, F1> Proxy<H, M1, M2, F1>
+impl<H, M, MF> Proxy<H, M, MF>
 where
     H: HttpHandler,
-    M1: MessageHandler,
-    M2: MessageHandler,
-    F1: MitmFilter,
+    M: MessageHandler,
+    MF: MitmFilter,
 {
     pub(crate) async fn proxy(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         match if req.method() == Method::CONNECT {
@@ -202,15 +199,13 @@ where
         let (client_sink, client_stream) = client_socket.split();
 
         let Proxy {
-            incoming_message_handler,
-            outgoing_message_handler,
-            ..
+            message_handler, ..
         } = self;
 
         spawn_message_forwarder(
             server_stream,
             client_sink,
-            incoming_message_handler,
+            message_handler.clone(),
             self.client_addr,
             uri.clone(),
         );
@@ -218,7 +213,7 @@ where
         spawn_message_forwarder(
             client_stream,
             server_sink,
-            outgoing_message_handler,
+            message_handler,
             self.client_addr,
             uri,
         );

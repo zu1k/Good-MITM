@@ -1,9 +1,9 @@
+use crate::mitm::hyper::{body::*, header, Body, HeaderMap, Request, Response, StatusCode};
 use cookie::{Cookie, CookieJar};
 use enum_dispatch::enum_dispatch;
 use fancy_regex::Regex;
 use good_mitm::{cache, utils::SingleOrMulti};
 use http::HeaderValue;
-use http_mitm::hyper::{body::*, header, Body, HeaderMap, Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 
 #[enum_dispatch]

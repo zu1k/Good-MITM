@@ -1,10 +1,7 @@
+use crate::HttpContext;
+use async_trait::async_trait;
+use hyper::{Body, Request};
 use std::{collections::HashMap, sync::RwLock};
-
-use http_mitm::{
-    async_trait::async_trait,
-    hyper::{Body, Request},
-    HttpContext,
-};
 use wildmatch::WildMatch;
 
 lazy_static! {
@@ -22,7 +19,7 @@ pub struct MitmFilter {
 }
 
 #[async_trait]
-impl http_mitm::MitmFilter for MitmFilter {
+impl crate::mitm::MitmFilter for MitmFilter {
     async fn filter(&mut self, _ctx: &HttpContext, req: &Request<Body>) -> bool {
         let host = req.uri().host().unwrap_or_default();
         let list = MITM_LIST.read().unwrap();

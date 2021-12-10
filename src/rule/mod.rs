@@ -2,14 +2,11 @@ mod action;
 mod file;
 pub mod filter;
 
+use crate::mitm::{decode_response, RequestOrResponse};
 use action::Action;
 use filter::Filter;
 use good_mitm::cache;
-use http_mitm::{
-    decode_response,
-    hyper::{header, header::HeaderValue, Body, Request, Response, StatusCode},
-    RequestOrResponse,
-};
+use hyper::{header, header::HeaderValue, Body, Request, Response, StatusCode};
 use log::*;
 use std::{path::Path, sync::RwLock, vec::Vec};
 

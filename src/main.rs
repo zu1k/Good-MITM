@@ -3,11 +3,12 @@ extern crate lazy_static;
 
 mod ca;
 mod handler;
+mod mitm;
 mod rule;
 
 use clap::Parser;
-use http_mitm::*;
 use log::*;
+use mitm::*;
 use rustls_pemfile as pemfile;
 use std::fs;
 
@@ -38,14 +39,14 @@ struct Run {
         short,
         long,
         default_value = "ca/private.key",
-        about = "private key file path"
+        help = "private key file path"
     )]
     key: String,
-    #[clap(short, long, default_value = "ca/cert.crt", about = "cert file path")]
+    #[clap(short, long, default_value = "ca/cert.crt", help = "cert file path")]
     cert: String,
-    #[clap(short, long, about = "load rules from file or dir")]
+    #[clap(short, long, help = "load rules from file or dir")]
     rule: String,
-    #[clap(short, long, default_value = "127.0.0.1:34567", about = "bind address")]
+    #[clap(short, long, default_value = "127.0.0.1:34567", help = "bind address")]
     bind: String,
 }
 
@@ -90,8 +91,7 @@ async fn run(key_path: &str, cert_path: &str, bind: &str) {
         listen_addr: bind.parse().expect("bind address not valid!"),
         shutdown_signal: shutdown_signal(),
         http_handler: handler::MitmHandler::default(),
-        incoming_message_handler: handler::NoopMessageHandler {},
-        outgoing_message_handler: handler::NoopMessageHandler {},
+        message_handler: crate::mitm::NoopMessageHandler::new(),
         mitm_filter: rule::filter::MitmFilter::default(),
         upstream_proxy: None,
         ca,

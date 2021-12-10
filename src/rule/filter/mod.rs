@@ -1,6 +1,6 @@
 use fancy_regex::Regex;
 use good_mitm::cache;
-use http_mitm::hyper::{Body, Request};
+use hyper::{Body, Request};
 use serde::{Deserialize, Serialize};
 
 mod mitm_filter;
