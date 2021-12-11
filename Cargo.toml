@@ -18,10 +18,9 @@ codegen-units = 1
 
 [dependencies]
 async-compression = { version = "0.3", features = ["tokio", "brotli", "gzip", "zlib", "zstd"] }
-async-trait = "0.1"
 bytes = { version = "1", features = ["serde"] }
 chrono = "0.4"
-clap = { version = "3.0.0-rc.3", features = ["derive"] }
+clap = { version = "3.0.0-rc", features = ["derive"] }
 cookie = "0.15"
 enum_dispatch = "0.3"
 env_logger = "0.9"

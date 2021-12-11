@@ -3,6 +3,7 @@ mod file;
 pub mod filter;
 
 use crate::{
+    handler::mitm_list_append,
     mitm::{decode_response, RequestOrResponse},
     utils::cache,
 };
@@ -34,13 +35,13 @@ impl From<file::Rule> for Rule {
                 .iter()
                 .filter_map(Filter::mitm_filtter_pattern)
                 .collect();
-            filter::mitm_list_append(mitm_list);
+            mitm_list_append(mitm_list);
 
             let mitm_list = match rule.mitm_list {
                 Some(s) => s.into_iter().collect(),
                 None => vec![],
             };
-            filter::mitm_list_append(mitm_list);
+            mitm_list_append(mitm_list);
         }
 
         Self {

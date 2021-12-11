@@ -3,9 +3,6 @@ use fancy_regex::Regex;
 use hyper::{Body, Request};
 use serde::{Deserialize, Serialize};
 
-mod mitm_filter;
-pub use mitm_filter::*;
-
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Filter {

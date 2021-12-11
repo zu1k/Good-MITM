@@ -1,8 +1,8 @@
-use super::{
-    HttpContext, HttpHandler, MaybeProxyClient, MessageContext, MessageHandler, MitmFilter,
-    RequestOrResponse, Rewind,
+use super::{HttpContext, MaybeProxyClient, MessageContext, RequestOrResponse, Rewind};
+use crate::{
+    ca::CertificateAuthority,
+    handler::{HttpHandler, MessageHandler, MitmFilter},
 };
-use crate::ca::CertificateAuthority;
 use futures::{Sink, SinkExt, Stream, StreamExt};
 use http::{header, uri::PathAndQuery, HeaderValue};
 use hyper::{
@@ -16,26 +16,13 @@ use tokio_rustls::TlsAcceptor;
 use tokio_tungstenite::{connect_async, tungstenite, tungstenite::Message, WebSocketStream};
 
 #[derive(Clone)]
-pub(crate) struct Proxy<H, M, MF>
-where
-    H: HttpHandler,
-    M: MessageHandler,
-    MF: MitmFilter,
-{
+pub(crate) struct Proxy {
     pub ca: Arc<CertificateAuthority>,
     pub client: MaybeProxyClient,
-    pub http_handler: H,
-    pub message_handler: M,
-    pub mitm_filter: MF,
     pub client_addr: SocketAddr,
 }
 
-impl<H, M, MF> Proxy<H, M, MF>
-where
-    H: HttpHandler,
-    M: MessageHandler,
-    MF: MitmFilter,
-{
+impl Proxy {
     pub(crate) async fn proxy(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         match if req.method() == Method::CONNECT {
             self.process_connect(req).await
@@ -47,12 +34,12 @@ where
         }
     }
 
-    async fn process_request(
-        mut self,
-        mut req: Request<Body>,
-    ) -> Result<Response<Body>, hyper::Error> {
-        let ctx = HttpContext {
+    async fn process_request(self, mut req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+        let mut ctx = HttpContext {
             client_addr: self.client_addr,
+            uri: None,
+            should_modify_response: false,
+            rule: vec![],
         };
 
         if req.uri().path().starts_with("/mitm/cert")
@@ -78,7 +65,7 @@ where
         req.headers_mut().remove(http::header::HOST);
         req.headers_mut().remove(http::header::ACCEPT_ENCODING);
 
-        let req = match self.http_handler.handle_request(&ctx, req).await {
+        let req = match HttpHandler::handle_request(&mut ctx, req).await {
             RequestOrResponse::Request(req) => req,
             RequestOrResponse::Response(res) => return Ok(res),
         };
@@ -131,14 +118,17 @@ where
         // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
         res.headers_mut().remove(header::STRICT_TRANSPORT_SECURITY);
 
-        Ok(self.http_handler.handle_response(&ctx, res).await)
+        Ok(HttpHandler::handle_response(&mut ctx, res).await)
     }
 
-    async fn process_connect(mut self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    async fn process_connect(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         let ctx = HttpContext {
             client_addr: self.client_addr,
+            uri: None,
+            should_modify_response: false,
+            rule: vec![],
         };
-        if self.mitm_filter.filter(&ctx, &req).await {
+        if MitmFilter::filter(&ctx, &req).await {
             tokio::task::spawn(async move {
                 let authority = req
                     .uri()
@@ -199,25 +189,9 @@ where
         let (server_sink, server_stream) = server_socket.split();
         let (client_sink, client_stream) = client_socket.split();
 
-        let Proxy {
-            message_handler, ..
-        } = self;
+        spawn_message_forwarder(server_stream, client_sink, self.client_addr, uri.clone());
 
-        spawn_message_forwarder(
-            server_stream,
-            client_sink,
-            message_handler.clone(),
-            self.client_addr,
-            uri.clone(),
-        );
-
-        spawn_message_forwarder(
-            client_stream,
-            server_sink,
-            message_handler,
-            self.client_addr,
-            uri,
-        );
+        spawn_message_forwarder(client_stream, server_sink, self.client_addr, uri);
     }
 
     async fn serve_websocket(self, stream: Rewind<Upgraded>) -> Result<(), hyper::Error> {
@@ -296,7 +270,6 @@ where
 fn spawn_message_forwarder(
     mut stream: impl Stream<Item = Result<Message, tungstenite::Error>> + Unpin + Send + 'static,
     mut sink: impl Sink<Message, Error = tungstenite::Error> + Unpin + Send + 'static,
-    mut handler: impl MessageHandler,
     client_addr: SocketAddr,
     uri: Uri,
 ) {
@@ -309,7 +282,7 @@ fn spawn_message_forwarder(
         while let Some(message) = stream.next().await {
             match message {
                 Ok(message) => {
-                    let message = match handler.handle_message(&ctx, message).await {
+                    let message = match MessageHandler::handle_message(&ctx, message).await {
                         Some(message) => message,
                         None => continue,
                     };

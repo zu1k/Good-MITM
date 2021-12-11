@@ -94,9 +94,6 @@ async fn run(key_path: &str, cert_path: &str, bind: &str) {
     let proxy_config = ProxyConfig {
         listen_addr: bind.parse().expect("bind address not valid!"),
         shutdown_signal: shutdown_signal(),
-        http_handler: handler::MitmHandler::default(),
-        message_handler: crate::handler::NoopMessageHandler::new(),
-        mitm_filter: rule::filter::MitmFilter::default(),
         upstream_proxy: None,
         ca,
     };

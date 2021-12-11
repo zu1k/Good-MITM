@@ -1,28 +1,17 @@
-use crate::{
-    mitm::{MessageContext, MessageHandler},
-    rule::{self, Rule},
-    HttpContext, HttpHandler, RequestOrResponse,
-};
-use async_trait::async_trait;
-use hyper::{header, Body, Request, Response, Uri};
+use crate::{mitm::MessageContext, rule, HttpContext, RequestOrResponse};
+use hyper::{header, Body, Request, Response};
 use hyper_tungstenite::tungstenite::Message;
 use log::info;
 
-#[derive(Clone, Default)]
-pub struct MitmHandler {
-    should_modify_response: bool,
-    rule: Vec<Rule>,
-    uri: Option<Uri>,
-}
+mod mitm_filter;
+pub use mitm_filter::*;
 
-#[async_trait]
-impl HttpHandler for MitmHandler {
-    async fn handle_request(
-        &mut self,
-        _ctx: &HttpContext,
-        req: Request<Body>,
-    ) -> RequestOrResponse {
-        self.uri = Some(req.uri().clone());
+#[derive(Clone, Default)]
+pub struct HttpHandler {}
+
+impl HttpHandler {
+    pub async fn handle_request(ctx: &mut HttpContext, req: Request<Body>) -> RequestOrResponse {
+        ctx.uri = Some(req.uri().clone());
 
         // remove accept-encoding to avoid encoded body
         let mut req = req;
@@ -30,11 +19,11 @@ impl HttpHandler for MitmHandler {
 
         let rules = rule::match_rules(&req);
         if !rules.is_empty() {
-            self.should_modify_response = true;
+            ctx.should_modify_response = true;
         }
 
         for mut rule in rules {
-            self.rule.push(rule.clone());
+            ctx.rule.push(rule.clone());
             let rt = rule.do_req(req).await;
             if let RequestOrResponse::Request(r) = rt {
                 req = r;
@@ -46,11 +35,11 @@ impl HttpHandler for MitmHandler {
         RequestOrResponse::Request(req)
     }
 
-    async fn handle_response(&mut self, _ctx: &HttpContext, res: Response<Body>) -> Response<Body> {
-        if !self.should_modify_response || self.rule.is_empty() {
+    pub async fn handle_response(ctx: &mut HttpContext, res: Response<Body>) -> Response<Body> {
+        if !ctx.should_modify_response || ctx.rule.is_empty() {
             return res;
         }
-        let uri = self.uri.as_ref().unwrap();
+        let uri = ctx.uri.as_ref().unwrap();
         let content_type = match res.headers().get(header::CONTENT_TYPE) {
             Some(content_type) => content_type.to_str().unwrap_or_default(),
             None => "unknown",
@@ -63,7 +52,7 @@ impl HttpHandler for MitmHandler {
         );
 
         let mut res = res;
-        let rules = self.rule.clone();
+        let rules = ctx.rule.clone();
         for rule in rules {
             res = rule.do_res(res).await;
         }
@@ -72,17 +61,10 @@ impl HttpHandler for MitmHandler {
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
-pub struct NoopMessageHandler {}
+pub struct MessageHandler {}
 
-impl NoopMessageHandler {
-    pub fn new() -> Self {
-        NoopMessageHandler {}
-    }
-}
-
-#[async_trait]
-impl MessageHandler for NoopMessageHandler {
-    async fn handle_message(&mut self, _ctx: &MessageContext, msg: Message) -> Option<Message> {
+impl MessageHandler {
+    pub async fn handle_message(_ctx: &MessageContext, msg: Message) -> Option<Message> {
         Some(msg)
     }
 }
