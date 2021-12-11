@@ -4,7 +4,7 @@ use std::sync::RwLock;
 use wildmatch::WildMatch;
 
 lazy_static! {
-    static ref MATCHES: RwLock<Vec<WildMatch>> = RwLock::from(Vec::new()); // TODO: init this
+    static ref MATCHES: RwLock<Vec<WildMatch>> = RwLock::from(Vec::new());
 }
 
 pub fn mitm_list_append(list: Vec<String>) {
