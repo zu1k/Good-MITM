@@ -11,6 +11,7 @@ mod rule;
 pub mod utils;
 
 use clap::Parser;
+use hyper_proxy::{Intercept, Proxy};
 use log::*;
 use mitm::*;
 use rustls_pemfile as pemfile;
@@ -52,6 +53,8 @@ struct Run {
     rule: String,
     #[clap(short, long, default_value = "127.0.0.1:34567", help = "bind address")]
     bind: String,
+    #[clap(short, long, help = "upstream proxy")]
+    proxy: Option<String>,
 }
 
 fn main() {
@@ -60,20 +63,20 @@ fn main() {
     let opts = AppOpts::parse();
     match opts.subcmd {
         SubCommand::Run(opts) => {
-            if let Err(err) = rule::add_rules_from_fs(opts.rule) {
+            if let Err(err) = rule::add_rules_from_fs(&opts.rule) {
                 error!("parse rule file failed, err: {}", err);
                 std::process::exit(3);
             }
-            run(&opts.key, &opts.cert, &opts.bind);
+            run(&opts);
         }
         SubCommand::Genca => ca::gen_ca(),
     }
 }
 
 #[tokio::main]
-async fn run(key_path: &str, cert_path: &str, bind: &str) {
-    let private_key_bytes = fs::read(key_path).expect("ca private key file path not valid!");
-    let ca_cert_bytes = fs::read(cert_path).expect("ca cert file path not valid!");
+async fn run(opts: &Run) {
+    let private_key_bytes = fs::read(&opts.key).expect("ca private key file path not valid!");
+    let ca_cert_bytes = fs::read(&opts.cert).expect("ca cert file path not valid!");
 
     let private_key = pemfile::pkcs8_private_keys(&mut private_key_bytes.as_slice())
         .expect("Failed to parse private key");
@@ -92,9 +95,12 @@ async fn run(key_path: &str, cert_path: &str, bind: &str) {
     .expect("Failed to create Certificate Authority");
 
     let proxy_config = ProxyConfig {
-        listen_addr: bind.parse().expect("bind address not valid!"),
+        listen_addr: opts.bind.parse().expect("bind address not valid!"),
         shutdown_signal: shutdown_signal(),
-        upstream_proxy: None,
+        upstream_proxy: opts
+            .proxy
+            .clone()
+            .map(|proxy| Proxy::new(Intercept::All, proxy.parse().unwrap())),
         ca,
     };
 
