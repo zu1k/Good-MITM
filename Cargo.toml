@@ -21,7 +21,7 @@ async-compression = { version = "0.3", features = ["tokio", "brotli", "gzip", "z
 bytes = { version = "1", features = ["serde"] }
 chrono = "0.4"
 clap = { version = "3.0", features = ["derive"] }
-cookie = "0.15"
+cookie = "0.16"
 enum_dispatch = "0.3"
 env_logger = "0.9"
 fancy-regex = "0.7"
