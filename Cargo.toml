@@ -12,11 +12,13 @@ keywords = ["proxy", "MITM"]
 exclude = [".github/", "docs/", "rules/"]
 
 [profile.release]
+strip = true
 lto = true
-opt-level = "z"
+opt-level = "s"
 codegen-units = 1
 
 [dependencies]
+anyhow = "1.0"
 async-compression = { version = "0.3", features = ["tokio", "brotli", "gzip", "zlib", "zstd"] }
 bytes = { version = "1", features = ["serde"] }
 chrono = "0.4"
@@ -44,3 +46,8 @@ tokio-rustls = { version = "0.23", default-features = false, features = ["tls12"
 tokio-tungstenite = { version = "0.16", features = ["rustls-tls-webpki-roots"] }
 tokio-util = { version = "0.6", features = ["io"] }
 wildmatch = "2.1"
+quick-js = { version = "0.4", features = ["log"], optional = true }
+
+[features]
+default = ["plugin-js"]
+plugin-js = ["quick-js"]

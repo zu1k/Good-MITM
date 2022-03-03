@@ -1,6 +1,7 @@
 mod action;
 mod file;
 pub mod filter;
+mod js;
 
 use crate::{
     handler::mitm_list_append,
