@@ -16,14 +16,21 @@ clean:
 deps:
 	cargo install cargo-strip xargo cross
 
+a: fmt clippy
+
 fmt:
 	cargo fmt --all
+
+fix:
+	cargo fix
+
+check:
+	cargo check
 
 clippy:
 	cargo clippy
 
-a: fmt clippy
-
+prepare: fmt fix check clippy
 
 CROSS_TARGET_LIST = \
 	x86_64-unknown-linux-musl \

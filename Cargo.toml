@@ -23,28 +23,29 @@ async-compression = { version = "0.3", features = ["tokio", "brotli", "gzip", "z
 bytes = { version = "1", features = ["serde"] }
 chrono = "0.4"
 clap = { version = "3.0", features = ["derive"] }
-cookie = "0.15"
+cookie = "0.16"
 enum_dispatch = "0.3"
 env_logger = "0.9"
-fancy-regex = "0.7"
+fancy-regex = "0.8"
 futures = "0.3"
 http = "0.2"
 hyper = { version = "0.14", features = ["full"] }
 hyper-proxy = { version = "0.9", default-features = false, features = ["rustls-webpki"] }
 hyper-rustls = { version = "0.23", features = ["http2", "webpki-tokio"] }
-hyper-tungstenite = "0.5"
+hyper-tungstenite = "0.6"
 lazy_static = "1.4"
 log = "0.4"
-moka = { version = "0.6", features = ["future"] }
-rcgen = { version = "0.8", features = ["x509-parser"] }
-rustls-pemfile = "0.2"
+moka = { version = "0.7", features = ["future"] }
+rcgen = { version = "0.9", features = ["x509-parser"] }
+rustls-pemfile = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
 thiserror = "1"
+time = "0.3"
 tokio = { version = "1", features = ["full"] }
 tokio-rustls = { version = "0.23", default-features = false, features = ["tls12"] }
-tokio-tungstenite = { version = "0.16", features = ["rustls-tls-webpki-roots"] }
-tokio-util = { version = "0.6", features = ["io"] }
+tokio-tungstenite = { version = "0.17", features = ["rustls-tls-webpki-roots"] }
+tokio-util = { version = "0.7", features = ["io"] }
 wildmatch = "2.1"
 quick-js = { version = "0.4", features = ["log"], optional = true }
 

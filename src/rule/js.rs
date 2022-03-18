@@ -1,5 +1,5 @@
-use quick_js::{console::LogConsole, Context, JsValue};
 use anyhow::{anyhow, Result};
+use quick_js::{console::LogConsole, Context, JsValue};
 
 pub fn js_eval(code: &str) -> Result<()> {
     let context = Context::builder().console(LogConsole).build()?;
@@ -15,7 +15,9 @@ pub fn callback_js_runtime() -> String {
 
 #[test]
 fn test_js_eval() {
-    env_logger::builder().filter_level(log::LevelFilter::Trace).init();
+    env_logger::builder()
+        .filter_level(log::LevelFilter::Trace)
+        .init();
 
     js_eval(r#"console.log("JavaScript Runtime: " + runtime())"#).unwrap();
 

@@ -1,5 +1,6 @@
 use crate::error::Error;
-use chrono::{Duration, Utc};
+use chrono::Utc;
+use cookie::time::OffsetDateTime;
 use http::uri::Authority;
 use moka::future::Cache;
 use rcgen::{
@@ -10,6 +11,7 @@ use std::{
     sync::{Arc, Mutex},
     time::{SystemTime, UNIX_EPOCH},
 };
+use time::ext::NumericalDuration;
 use tokio_rustls::rustls::{self, ServerConfig};
 
 /// Issues certificates for use when communicating with clients.
@@ -35,7 +37,7 @@ impl CertificateAuthority {
         private_key: rustls::PrivateKey,
         ca_cert: rustls::Certificate,
         ca_cert_string: String,
-        cache_size: usize,
+        cache_size: u64,
     ) -> Result<CertificateAuthority, Error> {
         let ca = CertificateAuthority {
             private_key,
@@ -81,8 +83,8 @@ impl CertificateAuthority {
             *serial_number += 1;
         }
 
-        params.not_before = now - Duration::weeks(1);
-        params.not_after = now + Duration::weeks(52);
+        params.not_before = OffsetDateTime::now_utc().saturating_sub(1.days());
+        params.not_after = OffsetDateTime::now_utc().saturating_add(52.weeks());
         params
             .subject_alt_names
             .push(SanType::DnsName(authority.host().to_string()));
