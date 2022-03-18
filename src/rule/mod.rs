@@ -1,7 +1,6 @@
 mod action;
 mod file;
 pub mod filter;
-mod js;
 
 use crate::{
     handler::mitm_list_append,
@@ -108,7 +107,7 @@ impl Rule {
                 Action::ModifyRequest(modify) => {
                     info!("[ModifyRequest] {}", url);
                     match modify.modify_req(tmp_req).await {
-                        Some(req) => tmp_req = req,
+                        Some(new_req) => tmp_req = new_req,
                         None => {
                             return RequestOrResponse::Response(
                                 Response::builder()
@@ -125,6 +124,19 @@ impl Rule {
                     action::log_req(&tmp_req).await;
                 }
 
+                Action::Js(code) => {
+                    info!("[LogRequest] {}", url);
+                    if let Ok(req) = action::js::modify_req(code, tmp_req).await {
+                        return RequestOrResponse::Request(req);
+                    } else {
+                        return RequestOrResponse::Response(
+                            Response::builder()
+                                .status(StatusCode::BAD_REQUEST)
+                                .body(Body::default())
+                                .unwrap(),
+                        );
+                    }
+                }
                 _ => {}
             }
         }
@@ -148,6 +160,18 @@ impl Rule {
                 Action::LogRes => {
                     info!("[LogResponse] {}", url);
                     action::log_res(&tmp_res).await;
+                }
+
+                Action::Js(code) => {
+                    info!("[LogResponse] {}", url);
+                    if let Ok(res) = action::js::modify_res(code, tmp_res).await {
+                        return res;
+                    } else {
+                        return Response::builder()
+                            .status(StatusCode::BAD_REQUEST)
+                            .body(Body::default())
+                            .unwrap();
+                    }
                 }
                 _ => {}
             }

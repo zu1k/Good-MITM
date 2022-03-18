@@ -1,0 +1,22 @@
+- name: "js_modify_request"
+  mitm: "*"
+  filters:
+    url-regex: '^https?:\/\/www\.baidu\.com'
+  actions:
+    js: |
+      function process() {
+        if (data.request != undefined) {
+          let req = data.request;
+          console.log(req.body);
+          return req;
+        }
+        if (data.response != undefined) {
+          let res = data.response;
+          if (res.body != undefined) {
+            res.body = res.body.replaceAll("百度", "百毒");
+          }
+          return res;
+        }
+      }
+      process()
+      

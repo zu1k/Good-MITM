@@ -13,7 +13,7 @@ use log::*;
 use std::{net::SocketAddr, sync::Arc};
 use tokio::{io::AsyncReadExt, net::TcpStream};
 use tokio_rustls::TlsAcceptor;
-use tokio_tungstenite::{connect_async, tungstenite, tungstenite::Message, WebSocketStream};
+use tokio_tungstenite::{tungstenite, tungstenite::Message};
 
 #[derive(Clone)]
 pub(crate) struct Proxy {
@@ -70,45 +70,6 @@ impl Proxy {
             RequestOrResponse::Response(res) => return Ok(res),
         };
 
-        if hyper_tungstenite::is_upgrade_request(&req) {
-            let scheme = if req.uri().scheme().unwrap_or(&http::uri::Scheme::HTTP)
-                == &http::uri::Scheme::HTTP
-            {
-                "ws"
-            } else {
-                "wss"
-            };
-
-            let uri = http::uri::Builder::new()
-                .scheme(scheme)
-                .authority(
-                    req.uri()
-                        .authority()
-                        .expect("Authority not included in request")
-                        .to_owned(),
-                )
-                .path_and_query(
-                    req.uri()
-                        .path_and_query()
-                        .unwrap_or(&PathAndQuery::from_static("/"))
-                        .to_owned(),
-                )
-                .build()
-                .expect("Failed to build URI for websocket connection");
-
-            let (res, websocket) =
-                hyper_tungstenite::upgrade(req, None).expect("Request has missing headers");
-
-            tokio::spawn(async move {
-                let server_socket = websocket.await.unwrap_or_else(|_| {
-                    panic!("Failed to upgrade websocket connection for {}", uri)
-                });
-                self.handle_websocket(server_socket, uri).await;
-            });
-
-            return Ok(res);
-        }
-
         let mut res = match self.client {
             MaybeProxyClient::Proxy(client) => client.request(req).await?,
             MaybeProxyClient::Https(client) => client.request(req).await?,
@@ -149,22 +110,16 @@ impl Proxy {
                             bytes::Bytes::copy_from_slice(buffer[..bytes_read].as_ref()),
                         );
 
-                        if bytes_read == 4 && buffer == *b"GET " {
-                            if let Err(e) = self.serve_websocket(upgraded).await {
-                                debug!("https connect error for {}: {}", authority, e);
-                            }
-                        } else {
-                            let server_config = self.ca.gen_server_config(&authority).await;
-                            let stream = TlsAcceptor::from(server_config)
-                                .accept(upgraded)
-                                .await
-                                .expect("Failed to establish TLS connection with client");
+                        let server_config = self.ca.gen_server_config(&authority).await;
+                        let stream = TlsAcceptor::from(server_config)
+                            .accept(upgraded)
+                            .await
+                            .expect("Failed to establish TLS connection with client");
 
-                            if let Err(e) = self.serve_https(stream).await {
-                                let e_string = e.to_string();
-                                if !e_string.starts_with("error shutting down connection") {
-                                    debug!("res:: {}", e);
-                                }
+                        if let Err(e) = self.serve_https(stream).await {
+                            let e_string = e.to_string();
+                            if !e_string.starts_with("error shutting down connection") {
+                                debug!("res:: {}", e);
                             }
                         }
                     }
@@ -181,58 +136,12 @@ impl Proxy {
         Ok(Response::new(Body::empty()))
     }
 
-    async fn handle_websocket(self, server_socket: WebSocketStream<Upgraded>, uri: Uri) {
-        let (client_socket, _) = connect_async(&uri)
-            .await
-            .unwrap_or_else(|_| panic!("Failed to open websocket connection to {}", uri));
-
-        let (server_sink, server_stream) = server_socket.split();
-        let (client_sink, client_stream) = client_socket.split();
-
-        spawn_message_forwarder(server_stream, client_sink, self.client_addr, uri.clone());
-
-        spawn_message_forwarder(client_stream, server_sink, self.client_addr, uri);
-    }
-
-    async fn serve_websocket(self, stream: Rewind<Upgraded>) -> Result<(), hyper::Error> {
-        let service = service_fn(|req| {
-            let authority = req
-                .headers()
-                .get(http::header::HOST)
-                .expect("Host is a required header")
-                .to_str()
-                .expect("Failed to convert host to str");
-
-            let uri = http::uri::Builder::new()
-                .scheme(http::uri::Scheme::HTTP)
-                .authority(authority)
-                .path_and_query(
-                    req.uri()
-                        .path_and_query()
-                        .unwrap_or(&PathAndQuery::from_static("/"))
-                        .to_owned(),
-                )
-                .build()
-                .expect("Failed to build URI");
-
-            let (mut parts, body) = req.into_parts();
-            parts.uri = uri;
-            let req = Request::from_parts(parts, body);
-            self.clone().process_request(req)
-        });
-
-        Http::new()
-            .serve_connection(stream, service)
-            .with_upgrades()
-            .await
-    }
-
     async fn serve_https(
         self,
         stream: tokio_rustls::server::TlsStream<Rewind<Upgraded>>,
     ) -> Result<(), hyper::Error> {
         let service = service_fn(|mut req| {
-            if req.version() == http::Version::HTTP_11 {
+            if req.version() == http::Version::HTTP_10 || req.version() == http::Version::HTTP_11 {
                 let authority = req
                     .headers()
                     .get(http::header::HOST)

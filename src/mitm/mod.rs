@@ -12,14 +12,13 @@ use hyper::{
 use hyper_proxy::{Proxy as UpstreamProxy, ProxyConnector};
 use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
 use proxy::Proxy;
-use std::{convert::Infallible, future::Future, net::SocketAddr, sync::Arc};
-
-pub(crate) use rewind::Rewind;
+use std::{future::Future, net::SocketAddr, sync::Arc};
 
 pub use crate::ca::CertificateAuthority;
 pub use decoder::decode_response;
 pub use hyper;
 pub use hyper_proxy;
+pub(crate) use rewind::Rewind;
 pub use tokio_rustls::rustls;
 pub use tokio_tungstenite::tungstenite;
 
@@ -92,8 +91,9 @@ where
         let client = client.clone();
         let ca = Arc::clone(&ca);
         let client_addr = conn.remote_addr();
+
         async move {
-            Ok::<_, Infallible>(service_fn(move |req| {
+            Ok::<_, Error>(service_fn(move |req| {
                 Proxy {
                     ca: Arc::clone(&ca),
                     client: client.clone(),

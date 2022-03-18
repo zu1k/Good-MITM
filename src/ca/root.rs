@@ -73,7 +73,7 @@ impl CertificateAuthority {
     }
 
     fn gen_cert(&self, authority: &Authority) -> rustls::Certificate {
-        let now = Utc::now();
+        let _now = Utc::now();
         let mut params = rcgen::CertificateParams::default();
 
         {

@@ -1,3 +1,4 @@
+pub mod js;
 mod log;
 mod modify;
 
@@ -14,4 +15,5 @@ pub enum Action {
     ModifyResponse(Modify),
     LogRes,
     LogReq,
+    Js(String),
 }
