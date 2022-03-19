@@ -30,7 +30,7 @@ check:
 clippy:
 	cargo clippy
 
-prepare: fmt fix check clippy
+prepare: fmt check clippy fix
 
 CROSS_TARGET_LIST = \
 	x86_64-unknown-linux-musl \

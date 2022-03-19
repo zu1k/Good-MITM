@@ -1,5 +1,4 @@
 use crate::error::Error;
-use chrono::Utc;
 use cookie::time::OffsetDateTime;
 use http::uri::Authority;
 use moka::future::Cache;
@@ -73,7 +72,6 @@ impl CertificateAuthority {
     }
 
     fn gen_cert(&self, authority: &Authority) -> rustls::Certificate {
-        let _now = Utc::now();
         let mut params = rcgen::CertificateParams::default();
 
         {
