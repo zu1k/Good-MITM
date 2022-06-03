@@ -1,25 +1,21 @@
-use super::{HttpContext, MaybeProxyClient, MessageContext, RequestOrResponse, Rewind};
+use super::{HttpContext, MaybeProxyClient, RequestOrResponse};
 use crate::{
     ca::CertificateAuthority,
-    handler::{HttpHandler, MessageHandler, MitmFilter},
+    handler::{HttpHandler, MitmFilter},
 };
-use futures::{Sink, SinkExt, Stream, StreamExt};
 use http::{header, uri::PathAndQuery, HeaderValue};
 use hyper::{
     server::conn::Http, service::service_fn, upgrade::Upgraded, Body, Method, Request, Response,
-    Uri,
 };
 use log::*;
-use std::{net::SocketAddr, sync::Arc};
-use tokio::{io::AsyncReadExt, net::TcpStream};
+use std::sync::Arc;
+use tokio::net::TcpStream;
 use tokio_rustls::TlsAcceptor;
-use tokio_tungstenite::{tungstenite, tungstenite::Message};
 
 #[derive(Clone)]
 pub(crate) struct Proxy {
     pub ca: Arc<CertificateAuthority>,
     pub client: MaybeProxyClient,
-    pub client_addr: SocketAddr,
 }
 
 impl Proxy {
@@ -36,7 +32,6 @@ impl Proxy {
 
     async fn process_request(self, mut req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         let mut ctx = HttpContext {
-            client_addr: self.client_addr,
             uri: None,
             should_modify_response: false,
             rule: vec![],
@@ -84,7 +79,6 @@ impl Proxy {
 
     async fn process_connect(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         let ctx = HttpContext {
-            client_addr: self.client_addr,
             uri: None,
             should_modify_response: false,
             rule: vec![],
@@ -98,18 +92,7 @@ impl Proxy {
                     .clone();
 
                 match hyper::upgrade::on(req).await {
-                    Ok(mut upgraded) => {
-                        let mut buffer = [0; 4];
-                        let bytes_read = upgraded
-                            .read(&mut buffer)
-                            .await
-                            .expect("Failed to read from upgraded connection");
-
-                        let upgraded = Rewind::new_buffered(
-                            upgraded,
-                            bytes::Bytes::copy_from_slice(buffer[..bytes_read].as_ref()),
-                        );
-
+                    Ok(upgraded) => {
                         let server_config = self.ca.gen_server_config(&authority).await;
                         let stream = TlsAcceptor::from(server_config)
                             .accept(upgraded)
@@ -138,7 +121,7 @@ impl Proxy {
 
     async fn serve_https(
         self,
-        stream: tokio_rustls::server::TlsStream<Rewind<Upgraded>>,
+        stream: tokio_rustls::server::TlsStream<Upgraded>,
     ) -> Result<(), hyper::Error> {
         let service = service_fn(|mut req| {
             if req.version() == http::Version::HTTP_10 || req.version() == http::Version::HTTP_11 {
@@ -174,38 +157,6 @@ impl Proxy {
             .with_upgrades()
             .await
     }
-}
-
-fn spawn_message_forwarder(
-    mut stream: impl Stream<Item = Result<Message, tungstenite::Error>> + Unpin + Send + 'static,
-    mut sink: impl Sink<Message, Error = tungstenite::Error> + Unpin + Send + 'static,
-    client_addr: SocketAddr,
-    uri: Uri,
-) {
-    let ctx = MessageContext {
-        client_addr,
-        server_uri: uri,
-    };
-
-    tokio::spawn(async move {
-        while let Some(message) = stream.next().await {
-            match message {
-                Ok(message) => {
-                    let message = match MessageHandler::handle_message(&ctx, message).await {
-                        Some(message) => message,
-                        None => continue,
-                    };
-
-                    match sink.send(message).await {
-                        Err(tungstenite::Error::ConnectionClosed) => (),
-                        Err(e) => error!("websocket send error: {}", e),
-                        _ => (),
-                    }
-                }
-                Err(e) => error!("websocket message error: {}", e),
-            }
-        }
-    });
 }
 
 fn allow_all_cros(resp: Response<Body>) -> Response<Body> {

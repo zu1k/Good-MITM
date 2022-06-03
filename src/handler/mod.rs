@@ -1,6 +1,5 @@
-use crate::{mitm::MessageContext, rule, HttpContext, RequestOrResponse};
+use crate::{rule, HttpContext, RequestOrResponse};
 use hyper::{header, Body, Request, Response};
-use hyper_tungstenite::tungstenite::Message;
 use log::info;
 
 mod mitm_filter;
@@ -57,14 +56,5 @@ impl HttpHandler {
             res = rule.do_res(res).await;
         }
         res
-    }
-}
-
-#[derive(Clone, Copy, Debug, Default, Eq, Hash, PartialEq)]
-pub struct MessageHandler {}
-
-impl MessageHandler {
-    pub async fn handle_message(_ctx: &MessageContext, msg: Message) -> Option<Message> {
-        Some(msg)
     }
 }

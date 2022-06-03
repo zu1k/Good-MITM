@@ -44,6 +44,6 @@ good-mitm.exe run -r rules
 
 ## License
 
-MIT License
+**Good-MITM** © [zu1k](https://github.com/zu1k), Released under the [MIT](./LICENSE) License.<br>
 
-Copyright (c) 2021 zu1k
+> Blog [zu1k.com](https://zu1k.com) · GitHub [@zu1k](https://github.com/zu1k) · Twitter [@zu1k_lv](https://twitter.com/zu1k_lv) · Telegram Channel [@peekfun](https://t.me/peekfun)

@@ -1,6 +1,4 @@
-mod decoder;
 mod proxy;
-mod rewind;
 
 use crate::{error::Error, rule::Rule};
 use hyper::{
@@ -15,10 +13,8 @@ use proxy::Proxy;
 use std::{future::Future, net::SocketAddr, sync::Arc};
 
 pub use crate::ca::CertificateAuthority;
-pub use decoder::decode_response;
 pub use hyper;
 pub use hyper_proxy;
-pub(crate) use rewind::Rewind;
 pub use tokio_rustls::rustls;
 pub use tokio_tungstenite::tungstenite;
 
@@ -38,22 +34,10 @@ pub enum RequestOrResponse {
 /// Context for HTTP requests and responses.
 #[derive(Clone, Debug)]
 pub struct HttpContext {
-    /// Address of the client that is sending the request.
-    pub client_addr: SocketAddr,
-
     pub uri: Option<Uri>,
 
     pub should_modify_response: bool,
     pub rule: Vec<Rule>,
-}
-
-/// Context for websocket messages.
-#[derive(Clone, Debug)]
-pub struct MessageContext {
-    /// Address of the client.
-    pub client_addr: SocketAddr,
-    /// URI of the server.
-    pub server_uri: Uri,
 }
 
 /// Configuration for the proxy server.
@@ -87,17 +71,15 @@ where
     let client = gen_client(upstream_proxy);
     let ca = Arc::new(ca);
 
-    let make_service = make_service_fn(move |conn: &AddrStream| {
+    let make_service = make_service_fn(move |_conn: &AddrStream| {
         let client = client.clone();
         let ca = Arc::clone(&ca);
-        let client_addr = conn.remote_addr();
 
         async move {
             Ok::<_, Error>(service_fn(move |req| {
                 Proxy {
                     ca: Arc::clone(&ca),
                     client: client.clone(),
-                    client_addr,
                 }
                 .proxy(req)
             }))

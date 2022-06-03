@@ -2,11 +2,7 @@ mod action;
 mod file;
 pub mod filter;
 
-use crate::{
-    handler::mitm_list_append,
-    mitm::{decode_response, RequestOrResponse},
-    utils::cache,
-};
+use crate::{handler::mitm_list_append, mitm::RequestOrResponse, utils::cache};
 use action::Action;
 use filter::Filter;
 use hyper::{header, header::HeaderValue, Body, Request, Response, StatusCode};
@@ -152,9 +148,6 @@ impl Rule {
             match action {
                 Action::ModifyResponse(modify) => {
                     info!("[ModifyResponse] {}", url);
-                    if tmp_res.headers().get(header::CONTENT_ENCODING).is_some() {
-                        tmp_res = decode_response(tmp_res).unwrap()
-                    };
                     tmp_res = modify.modify_res(tmp_res).await
                 }
                 Action::LogRes => {

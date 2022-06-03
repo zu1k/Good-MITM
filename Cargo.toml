@@ -1,7 +1,7 @@
 [package]
 name = "good-mitm"
 version = "0.2.4"
-authors = ["zu1k <i@lgf.im>"]
+authors = ["zu1k <i@zu1k.com>"]
 edition = "2021"
 description = "Use MITM technology to provide features like rewrite, redirect."
 readme = "README.md"
@@ -26,18 +26,18 @@ clap = { version = "3.0", features = ["derive"] }
 cookie = "0.16"
 enum_dispatch = "0.3"
 env_logger = "0.9"
-fancy-regex = "0.8"
+fancy-regex = "0.10"
 futures = "0.3"
 http = "0.2"
 hyper = { version = "0.14", features = ["client", "http1", "server", "stream", "tcp"]  }
 hyper-proxy = { version = "0.9", default-features = false, features = ["rustls-webpki"] }
 hyper-rustls = { version = "0.23", features = ["http2", "webpki-tokio"] }
-hyper-tungstenite = "0.6"
+hyper-tungstenite = "0.8"
 lazy_static = "1.4"
 log = "0.4"
-moka = { version = "0.7", features = ["future"] }
+moka = { version = "0.8", features = ["future"] }
 rcgen = { version = "0.9", features = ["x509-parser"] }
-rustls-pemfile = "0.3"
+rustls-pemfile = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
 thiserror = "1"

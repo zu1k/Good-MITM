@@ -5,9 +5,11 @@
   actions:
     js: |
       function process() {
+        console.log("from quick_js");
+
         if (data.request != undefined) {
           let req = data.request;
-          console.log(req.body);
+          console.log(req.headers["user-agent"]);
           return req;
         }
         if (data.response != undefined) {
