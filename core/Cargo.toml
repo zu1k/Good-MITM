@@ -1,0 +1,31 @@
+[package]
+name = "good-mitm-core"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+bytes = { version = "1", features = ["serde"] }
+cached = "0.34"
+chrono = "0.4"
+cookie = "0.16"
+enum_dispatch = "0.3"
+fancy-regex = "0.10"
+futures = "0.3"
+http = "0.2"
+hyper = { version = "0.14", features = ["client", "http1", "server", "stream", "tcp"]  }
+hyper-proxy = { version = "0.9", default-features = false, features = ["rustls-webpki"] }
+hyper-rustls = { version = "0.23", features = ["http2", "webpki-tokio"] }
+lazy_static = "1.4"
+log = "0.4"
+moka = { version = "0.8", features = ["future"] }
+rcgen = { version = "0.9", features = ["x509-parser"] }
+serde = { version = "1.0", features = ["derive"] }
+thiserror = "1"
+time = "0.3"
+typed-builder = "0.10"
+tokio = { version = "1", features = ["full"] }
+tokio-rustls = { version = "0.23", default-features = false, features = ["tls12"] }
+tokio-util = { version = "0.7", features = ["io"] }
+wildmatch = "2.1"
+quick-js = { version = "0.4", features = ["log"] }

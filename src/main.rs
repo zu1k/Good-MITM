@@ -1,21 +1,14 @@
 #![allow(dead_code)]
 
-#[macro_use]
-extern crate lazy_static;
+use clap::Parser;
+use core::{CertificateAuthority, Proxy};
+use hyper_proxy::Intercept;
+use log::*;
+use rustls_pemfile as pemfile;
+use std::fs;
 
 mod ca;
 mod error;
-mod handler;
-mod mitm;
-mod rule;
-pub mod utils;
-
-use clap::Parser;
-use hyper_proxy::{Intercept, Proxy};
-use log::*;
-use mitm::*;
-use rustls_pemfile as pemfile;
-use std::fs;
 
 async fn shutdown_signal() {
     tokio::signal::ctrl_c()
@@ -63,10 +56,10 @@ fn main() {
     let opts = AppOpts::parse();
     match opts.subcmd {
         SubCommand::Run(opts) => {
-            if let Err(err) = rule::add_rules_from_fs(&opts.rule) {
-                error!("parse rule file failed, err: {}", err);
-                std::process::exit(3);
-            }
+            // if let Err(err) = rule::add_rules_from_fs(&opts.rule) {
+            //     error!("parse rule file failed, err: {}", err);
+            //     std::process::exit(3);
+            // }
             run(&opts);
         }
         SubCommand::Genca => ca::gen_ca(),
@@ -96,17 +89,37 @@ async fn run(opts: &Run) {
     .expect("Failed to create Certificate Authority");
 
     info!("Http Proxy listen on: http://{}", opts.bind);
-    let proxy_config = ProxyConfig {
-        listen_addr: opts.bind.parse().expect("bind address not valid!"),
-        shutdown_signal: shutdown_signal(),
-        upstream_proxy: opts
-            .proxy
-            .clone()
-            .map(|proxy| Proxy::new(Intercept::All, proxy.parse().unwrap())),
-        ca,
-    };
 
-    if let Err(e) = start_proxy(proxy_config).await {
+    let rules = vec![];
+    let mitm_filters = vec![];
+
+    let proxy = Proxy::builder()
+        .ca(ca)
+        .listen_addr(opts.bind.parse().expect("bind address not valid!"))
+        .upstream_proxy(
+            opts.proxy
+                .clone()
+                .map(|proxy| hyper_proxy::Proxy::new(Intercept::All, proxy.parse().unwrap())),
+        )
+        .shutdown_signal(shutdown_signal())
+        .mitm_filters(mitm_filters)
+        .rules(rules)
+        .build();
+
+    if let Err(e) = proxy.start_proxy().await {
         error!("{}", e);
     }
 }
+
+// pub fn add_rules_from_fs<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn std::error::Error>> {
+//     let mut rules = RULES.write().unwrap();
+//     match file::read_rules_from_fs(path) {
+//         Ok(rules_config) => {
+//             let mut rules_tmp = rules_config.into_iter().map(Rule::from).collect();
+//             rules.append(&mut rules_tmp);
+
+//             Ok(())
+//         }
+//         Err(err) => Err(err),
+//     }
+// }

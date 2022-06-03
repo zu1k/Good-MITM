@@ -1,6 +1,6 @@
 [package]
 name = "good-mitm"
-version = "0.2.4"
+version = "0.3.0"
 authors = ["zu1k <i@zu1k.com>"]
 edition = "2021"
 description = "Use MITM technology to provide features like rewrite, redirect."
@@ -19,36 +19,21 @@ codegen-units = 1
 
 [dependencies]
 anyhow = "1.0"
-async-compression = { version = "0.3", features = ["tokio", "brotli", "gzip", "zlib", "zstd"] }
-bytes = { version = "1", features = ["serde"] }
-chrono = "0.4"
 clap = { version = "3.0", features = ["derive"] }
-cookie = "0.16"
-enum_dispatch = "0.3"
-env_logger = "0.9"
-fancy-regex = "0.10"
-futures = "0.3"
-http = "0.2"
-hyper = { version = "0.14", features = ["client", "http1", "server", "stream", "tcp"]  }
-hyper-proxy = { version = "0.9", default-features = false, features = ["rustls-webpki"] }
-hyper-rustls = { version = "0.23", features = ["http2", "webpki-tokio"] }
-hyper-tungstenite = "0.8"
-lazy_static = "1.4"
-log = "0.4"
-moka = { version = "0.8", features = ["future"] }
+core = { path = "./core", package = "good-mitm-core" }
 rcgen = { version = "0.9", features = ["x509-parser"] }
-rustls-pemfile = "1.0"
+thiserror = "1"
+log = "0.4"
+env_logger = "0.9"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
-thiserror = "1"
-time = "0.3"
+hyper-proxy = { version = "0.9", default-features = false, features = ["rustls-webpki"] }
+rustls-pemfile = "1.0"
 tokio = { version = "1", features = ["full"] }
-tokio-rustls = { version = "0.23", default-features = false, features = ["tls12"] }
-tokio-tungstenite = { version = "0.17", features = ["rustls-tls-webpki-roots"] }
-tokio-util = { version = "0.7", features = ["io"] }
-wildmatch = "2.1"
-quick-js = { version = "0.4", features = ["log"], optional = true }
+rustls = "0.20.6"
 
-[features]
-default = ["plugin-js"]
-plugin-js = ["quick-js"]
+
+[workspace]
+members = [
+    "core",
+]

@@ -1,7 +1,7 @@
-use crate::utils::cache;
-use fancy_regex::Regex;
 use hyper::{Body, Request};
 use serde::{Deserialize, Serialize};
+
+use crate::cache::get_regex;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
@@ -14,22 +14,15 @@ pub enum Filter {
     UrlRegex(String),
 }
 
-#[allow(dead_code)]
 impl Filter {
-    pub fn init(self) -> Self {
+    pub fn init(&self) -> Self {
         match self {
-            Filter::All => self,
+            Filter::All => self.to_owned(),
             Filter::Domain(d) => Self::Domain(d.to_lowercase()),
             Filter::DomainKeyword(d) => Self::DomainKeyword(d.to_lowercase()),
             Filter::DomainPrefix(d) => Self::DomainPrefix(d.to_lowercase()),
             Filter::DomainSuffix(d) => Self::DomainSuffix(d.to_lowercase()),
-            Filter::UrlRegex(re) => {
-                cache::REGEX
-                    .write()
-                    .unwrap()
-                    .insert(re.clone(), Regex::new(&re).unwrap());
-                Self::UrlRegex(re)
-            }
+            Filter::UrlRegex(re) => Self::UrlRegex(re.to_owned()),
         }
     }
 
@@ -43,8 +36,7 @@ impl Filter {
             Self::DomainSuffix(target) => host.ends_with(target),
             Self::UrlRegex(target) => {
                 let url = req.uri().to_string();
-                let list = cache::REGEX.read().unwrap();
-                list.get(target).unwrap().is_match(&url).unwrap()
+                get_regex(target).is_match(&url).unwrap()
             }
         }
     }

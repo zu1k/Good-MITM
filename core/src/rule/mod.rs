@@ -1,51 +1,20 @@
 mod action;
-mod file;
 pub mod filter;
 
-use crate::{handler::mitm_list_append, mitm::RequestOrResponse, utils::cache};
 use action::Action;
 use filter::Filter;
 use hyper::{header, header::HeaderValue, Body, Request, Response, StatusCode};
 use log::*;
-use std::{path::Path, sync::RwLock, vec::Vec};
+use std::vec::Vec;
 
-lazy_static! {
-    static ref RULES: RwLock<Vec<Rule>> = RwLock::from(Vec::new());
-}
+use crate::{cache, mitm::RequestOrResponse};
 
 #[derive(Debug, Clone)]
 pub struct Rule {
     pub filters: Vec<Filter>,
     pub actions: Vec<Action>,
 
-    url: Option<String>,
-}
-
-impl From<file::Rule> for Rule {
-    fn from(rule: file::Rule) -> Self {
-        let filters: Vec<Filter> = rule.filters.into_iter().map(Filter::init).collect();
-
-        {
-            // append mitm list
-            let mitm_list: Vec<String> = filters
-                .iter()
-                .filter_map(Filter::mitm_filtter_pattern)
-                .collect();
-            mitm_list_append(mitm_list);
-
-            let mitm_list = match rule.mitm_list {
-                Some(s) => s.into_iter().collect(),
-                None => vec![],
-            };
-            mitm_list_append(mitm_list);
-        }
-
-        Self {
-            filters,
-            actions: rule.actions.to_vec(),
-            url: None,
-        }
-    }
+    pub url: Option<String>,
 }
 
 impl Rule {
@@ -70,11 +39,7 @@ impl Rule {
                     if target.contains('$') {
                         for filter in self.filters.clone() {
                             if let Filter::UrlRegex(re) = filter {
-                                let target = cache::REGEX
-                                    .read()
-                                    .unwrap()
-                                    .get(&re)
-                                    .unwrap()
+                                let target = cache::get_regex(&re)
                                     .replace(tmp_req.uri().to_string().as_str(), target.as_str())
                                     .to_string();
                                 if let Ok(target_url) = HeaderValue::from_str(target.as_str()) {
@@ -171,31 +136,5 @@ impl Rule {
         }
 
         tmp_res
-    }
-}
-
-pub fn match_rules(req: &Request<Body>) -> Vec<Rule> {
-    let mut matched = vec![];
-    let rules = RULES.read().unwrap();
-    for rule in rules.iter() {
-        for filter in &rule.filters {
-            if filter.is_match_req(req) {
-                matched.push(rule.clone());
-            }
-        }
-    }
-    matched
-}
-
-pub fn add_rules_from_fs<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn std::error::Error>> {
-    let mut rules = RULES.write().unwrap();
-    match file::read_rules_from_fs(path) {
-        Ok(rules_config) => {
-            let mut rules_tmp = rules_config.into_iter().map(Rule::from).collect();
-            rules.append(&mut rules_tmp);
-
-            Ok(())
-        }
-        Err(err) => Err(err),
     }
 }

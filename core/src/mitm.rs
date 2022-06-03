@@ -1,9 +1,10 @@
-use super::{HttpContext, MaybeProxyClient, RequestOrResponse};
 use crate::{
     ca::CertificateAuthority,
     handler::{HttpHandler, MitmFilter},
+    http_client::HttpClient,
+    rule::Rule,
 };
-use http::{header, uri::PathAndQuery, HeaderValue};
+use http::{header, uri::PathAndQuery, HeaderValue, Uri};
 use hyper::{
     server::conn::Http, service::service_fn, upgrade::Upgraded, Body, Method, Request, Response,
 };
@@ -12,13 +13,32 @@ use std::sync::Arc;
 use tokio::net::TcpStream;
 use tokio_rustls::TlsAcceptor;
 
-#[derive(Clone)]
-pub(crate) struct Proxy {
-    pub ca: Arc<CertificateAuthority>,
-    pub client: MaybeProxyClient,
+/// Enum representing either an HTTP request or response.
+#[derive(Debug)]
+pub enum RequestOrResponse {
+    Request(Request<Body>),
+    Response(Response<Body>),
 }
 
-impl Proxy {
+/// Context for HTTP requests and responses.
+#[derive(Clone, Debug)]
+pub struct HttpContext {
+    pub uri: Option<Uri>,
+
+    pub should_modify_response: bool,
+    pub rule: Vec<Rule>,
+}
+
+#[derive(Clone)]
+pub(crate) struct MitmProxy {
+    pub ca: Arc<CertificateAuthority>,
+    pub client: HttpClient,
+
+    pub http_handler: Arc<HttpHandler>,
+    pub mitm_filter: Arc<MitmFilter>,
+}
+
+impl MitmProxy {
     pub(crate) async fn proxy(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         match if req.method() == Method::CONNECT {
             self.process_connect(req).await
@@ -60,21 +80,21 @@ impl Proxy {
         req.headers_mut().remove(http::header::HOST);
         req.headers_mut().remove(http::header::ACCEPT_ENCODING);
 
-        let req = match HttpHandler::handle_request(&mut ctx, req).await {
+        let req = match self.http_handler.handle_request(&mut ctx, req).await {
             RequestOrResponse::Request(req) => req,
             RequestOrResponse::Response(res) => return Ok(res),
         };
 
         let mut res = match self.client {
-            MaybeProxyClient::Proxy(client) => client.request(req).await?,
-            MaybeProxyClient::Https(client) => client.request(req).await?,
+            HttpClient::Proxy(client) => client.request(req).await?,
+            HttpClient::Https(client) => client.request(req).await?,
         };
 
         // Remove `Strict-Transport-Security` to avoid HSTS
         // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
         res.headers_mut().remove(header::STRICT_TRANSPORT_SECURITY);
 
-        Ok(HttpHandler::handle_response(&mut ctx, res).await)
+        Ok(self.http_handler.handle_response(&mut ctx, res).await)
     }
 
     async fn process_connect(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
@@ -83,7 +103,7 @@ impl Proxy {
             should_modify_response: false,
             rule: vec![],
         };
-        if MitmFilter::filter(&ctx, &req).await {
+        if self.mitm_filter.filter(&ctx, &req).await {
             tokio::task::spawn(async move {
                 let authority = req
                     .uri()
