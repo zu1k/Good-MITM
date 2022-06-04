@@ -719,6 +719,7 @@ dependencies = [
  "moka",
  "quick-js",
  "rcgen",
+ "rustls 0.20.6",
  "serde",
  "thiserror",
  "time",

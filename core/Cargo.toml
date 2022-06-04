@@ -25,3 +25,4 @@ tokio-rustls = { version = "0.23", default-features = false, features = ["tls12"
 tokio-util = { version = "0.7", features = ["io"] }
 wildmatch = "2.1"
 quick-js = { version = "0.4", features = ["log"] }
+rustls = { version = "0.20", features = ["dangerous_configuration"] }

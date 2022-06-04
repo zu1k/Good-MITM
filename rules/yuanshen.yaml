@@ -1,0 +1,10 @@
+- name: "redirect yuanshen"
+  filter:
+    - domain-suffix: 'mihoyo.com'
+    - domain-suffix: 'hoyoverse.com'
+    - domain-suffix: 'yuanshen.com'
+  action:
+    modify-request:
+      url:
+        re: 'https?:\/\/(.+)\.(.+)\.com(.*)'
+        new: 'https://192.168.226.200:443$3'
