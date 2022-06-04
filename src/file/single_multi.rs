@@ -15,7 +15,7 @@ impl<T> SingleOrMulti<T>
 where
     T: Clone,
 {
-    pub fn to_vec(self) -> Vec<T> {
+    pub fn into_vec(self) -> Vec<T> {
         self.into()
     }
 }

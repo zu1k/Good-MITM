@@ -260,12 +260,10 @@ impl Modify {
         for md in mds {
             if md.remove {
                 header.remove(&md.key);
-            } else {
-                if let Some(h) = header.get_mut(&md.key) {
-                    if let Some(ref md) = md.value {
-                        let new_header_value = md.exec_action(h.to_str().unwrap_or_default());
-                        *h = header::HeaderValue::from_str(new_header_value.as_str()).unwrap();
-                    }
+            } else if let Some(h) = header.get_mut(&md.key) {
+                if let Some(ref md) = md.value {
+                    let new_header_value = md.exec_action(h.to_str().unwrap_or_default());
+                    *h = header::HeaderValue::from_str(new_header_value.as_str()).unwrap();
                 }
             }
         }

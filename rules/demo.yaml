@@ -1,15 +1,15 @@
 - name: "redirect"
   filter:
-    domain: 'none.lgf.im'
+    domain: 'none.zu1k.com'
   action:
-    redirect: "https://lgf.im/"
+    redirect: "https://zu1k.com/"
 
 - name: "redirect regex"
-  mitm: "*.lgf.im"
+  mitm: "*.zu1k.com"
   filter:
-    url-regex: 'https://r.lgf.im(.*)'
+    url-regex: 'https://r.zu1k.com(.*)'
   action:
-    redirect: "https://lgf.im/$1"
+    redirect: "https://zu1k.com/$1"
 
 - name: "reject CSDN"
   filter:
@@ -18,7 +18,7 @@
 
 - name: "modify response header"
   filter:
-    domain-suffix: 'lgf.im'
+    domain-suffix: 'zu1k.com'
   action:
     modify-response:
       header:

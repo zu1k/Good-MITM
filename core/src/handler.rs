@@ -94,8 +94,11 @@ pub struct MitmFilter {
 }
 
 impl MitmFilter {
-    pub fn new(filters: Arc<RwLock<Vec<WildMatch>>>) -> Self {
-        Self { filters }
+    pub fn new(filters: Vec<String>) -> Self {
+        let filters = filters.iter().map(|f| WildMatch::new(f)).collect();
+        Self {
+            filters: Arc::new(RwLock::new(filters)),
+        }
     }
 
     pub async fn filter(&self, _ctx: &HttpContext, req: &Request<Body>) -> bool {

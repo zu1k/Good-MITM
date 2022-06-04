@@ -52,7 +52,7 @@
 ```yaml
 - name: "modify response header"
   filter:
-    domain-suffix: 'lgf.im'
+    domain-suffix: 'zu1k.com'
   action:
     modify-response:
       header:

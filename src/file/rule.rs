@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{rule::{filter::Filter, action::Action}, handler::mitm_list_append};
-
 use super::SingleOrMulti;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -10,34 +8,37 @@ pub struct Rule {
     #[serde(alias = "mitm")]
     pub mitm_list: Option<Vec<String>>,
     #[serde(alias = "filter")]
-    pub filters: SingleOrMulti<Filter>,
+    pub filters: SingleOrMulti<core::rule::Filter>,
     #[serde(alias = "action")]
-    pub actions: SingleOrMulti<Action>,
+    pub actions: SingleOrMulti<core::rule::Action>,
 }
 
-impl Into<crate::rule::Rule> for Rule {
-    fn into(self) -> crate::rule::Rule {
-        let filters: Vec<Filter> = self.filters.to_vec().iter().map(|f| Filter::init).collect();
+impl From<Rule> for (core::rule::Rule, Vec<String>) {
+    fn from(rule: Rule) -> Self {
+        let filters: Vec<core::rule::Filter> = rule
+            .filters
+            .into_vec()
+            .iter()
+            .map(core::rule::Filter::init)
+            .collect();
 
-        {
-            // append mitm list
-            let mitm_list: Vec<String> = filters
-                .iter()
-                .filter_map(Filter::mitm_filtter_pattern)
-                .collect();
-            mitm_list_append(mitm_list);
+        let mut mitm_filters: Vec<String> = filters
+            .iter()
+            .filter_map(core::rule::Filter::mitm_filtter_pattern)
+            .collect();
 
-            let mitm_list = match self.mitm_list {
-                Some(s) => s.into_iter().collect(),
-                None => vec![],
-            };
-            mitm_list_append(mitm_list);
-        }
+        let mut mitm_list_2 = match rule.mitm_list {
+            Some(s) => s.into_iter().collect(),
+            None => vec![],
+        };
+        mitm_filters.append(&mut mitm_list_2);
 
-        crate::rule::Rule {
+        let rule = core::rule::Rule {
             filters,
-            actions: self.actions.to_vec(),
+            actions: rule.actions.into_vec(),
             url: None,
-        }
+        };
+
+        (rule, mitm_filters)
     }
 }

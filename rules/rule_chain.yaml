@@ -1,12 +1,12 @@
-- name: "log-lgf.im"
+- name: "log-zu1k.com"
   filter:
-    domain: "lgf.im"
+    domain: "zu1k.com"
   action:
     - log-req
 
-- name: "modify res lgf.im"
+- name: "modify res zu1k.com"
   filter:
-    domain-suffix: "lgf.im"
+    domain-suffix: "zu1k.com"
   action:
     modify-response:
       body:

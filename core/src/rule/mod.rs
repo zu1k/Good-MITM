@@ -1,13 +1,13 @@
-mod action;
-pub mod filter;
-
-use action::Action;
-use filter::Filter;
 use hyper::{header, header::HeaderValue, Body, Request, Response, StatusCode};
 use log::*;
 use std::vec::Vec;
 
 use crate::{cache, mitm::RequestOrResponse};
+pub use action::Action;
+pub use filter::Filter;
+
+mod action;
+mod filter;
 
 #[derive(Debug, Clone)]
 pub struct Rule {

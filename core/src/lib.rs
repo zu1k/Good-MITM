@@ -7,17 +7,12 @@ use hyper::{
 };
 use hyper_proxy::Proxy as UpstreamProxy;
 use mitm::MitmProxy;
-use std::{
-    future::Future,
-    net::SocketAddr,
-    sync::{Arc, RwLock},
-};
+use rule::Rule;
+use std::{future::Future, net::SocketAddr, sync::Arc};
 use typed_builder::TypedBuilder;
-use wildmatch::WildMatch;
 
 pub use ca::CertificateAuthority;
 use error::Error;
-pub use rule::*;
 
 mod ca;
 mod cache;
@@ -25,7 +20,7 @@ mod error;
 mod handler;
 mod http_client;
 mod mitm;
-mod rule;
+pub mod rule;
 
 #[derive(TypedBuilder)]
 pub struct Proxy<F: Future<Output = ()>> {
@@ -38,7 +33,7 @@ pub struct Proxy<F: Future<Output = ()>> {
     pub upstream_proxy: Option<UpstreamProxy>,
 
     pub rules: Vec<Rule>,
-    pub mitm_filters: Vec<WildMatch>,
+    pub mitm_filters: Vec<String>,
 }
 
 impl<F> Proxy<F>
@@ -51,9 +46,7 @@ where
 
         let rules = Arc::new(self.rules);
         let http_handler = Arc::new(HttpHandler::new(rules));
-
-        let filters = Arc::new(RwLock::new(self.mitm_filters));
-        let mitm_filter = Arc::new(MitmFilter::new(filters));
+        let mitm_filter = Arc::new(MitmFilter::new(self.mitm_filters));
 
         let make_service = make_service_fn(move |_conn: &AddrStream| {
             let client = client.clone();

@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use anyhow::{Ok, Result};
 use clap::Parser;
 use core::{CertificateAuthority, Proxy};
 use hyper_proxy::Intercept;
@@ -9,6 +10,7 @@ use std::fs;
 
 mod ca;
 mod error;
+mod file;
 
 async fn shutdown_signal() {
     tokio::signal::ctrl_c()
@@ -56,18 +58,14 @@ fn main() {
     let opts = AppOpts::parse();
     match opts.subcmd {
         SubCommand::Run(opts) => {
-            // if let Err(err) = rule::add_rules_from_fs(&opts.rule) {
-            //     error!("parse rule file failed, err: {}", err);
-            //     std::process::exit(3);
-            // }
-            run(&opts);
+            run(&opts).unwrap();
         }
         SubCommand::Genca => ca::gen_ca(),
     }
 }
 
 #[tokio::main]
-async fn run(opts: &Run) {
+async fn run(opts: &Run) -> Result<()> {
     info!("CA Private key use: {}", opts.key);
     let private_key_bytes = fs::read(&opts.key).expect("ca private key file path not valid!");
     let private_key = pemfile::pkcs8_private_keys(&mut private_key_bytes.as_slice())
@@ -90,8 +88,7 @@ async fn run(opts: &Run) {
 
     info!("Http Proxy listen on: http://{}", opts.bind);
 
-    let rules = vec![];
-    let mitm_filters = vec![];
+    let (rules, mitm_filters) = file::load_rules_amd_mitm_filters(&opts.rule)?;
 
     let proxy = Proxy::builder()
         .ca(ca)
@@ -105,21 +102,6 @@ async fn run(opts: &Run) {
         .mitm_filters(mitm_filters)
         .rules(rules)
         .build();
-
-    if let Err(e) = proxy.start_proxy().await {
-        error!("{}", e);
-    }
+    proxy.start_proxy().await?;
+    Ok(())
 }
-
-// pub fn add_rules_from_fs<P: AsRef<Path>>(path: P) -> Result<(), Box<dyn std::error::Error>> {
-//     let mut rules = RULES.write().unwrap();
-//     match file::read_rules_from_fs(path) {
-//         Ok(rules_config) => {
-//             let mut rules_tmp = rules_config.into_iter().map(Rule::from).collect();
-//             rules.append(&mut rules_tmp);
-
-//             Ok(())
-//         }
-//         Err(err) => Err(err),
-//     }
-// }

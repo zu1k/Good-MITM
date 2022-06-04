@@ -37,9 +37,9 @@
 ```yaml
 - name: "redirect"
   filter:
-    domain: 'none.lgf.im'
+    domain: 'none.zu1k.com'
   action:
-    redirect: "https://lgf.im/"
+    redirect: "https://zu1k.com/"
 ```
 
 ### DomainKeyword 域名关键词
