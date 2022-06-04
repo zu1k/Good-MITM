@@ -1,0 +1,24 @@
+- name: "modify response body plain"
+  filter:
+    domain: '126.com'
+  action:
+    modify-response:
+      body: "Hello 126.com, from Good-MITM"
+
+- name: "modify response body replace"
+  filter:
+    domain-suffix: '163.com'
+  action:
+    modify-response:
+      body:
+        origin: "网易首页"
+        new: "Good-MITM 首页"
+
+- name: "modify response body regex replace"
+  filter:
+    domain-suffix: 'zu1k.com'
+  action:
+    - modify-response:
+        body:
+          re: '(\d{4})'
+          new: 'maybe $1'

@@ -1,0 +1,19 @@
+- name: "modify response header"
+  filter:
+    domain: '126.com'
+  action:
+    - modify-response:
+        header:
+          key: date
+          value:
+            origin: "2022"
+            new: "1999"
+    - modify-response:
+        header:
+          key: new-header-item
+          value: Good-MITM
+    - modify-response:
+        header:
+          key: server
+          remove: true
+      

@@ -15,16 +15,3 @@
   filter:
     domain-keyword: 'csdn'
   action: reject
-
-- name: "modify response"
-  filter:
-    domain-suffix: 'zu1k.com'
-  action:
-    - modify-request:
-        header:
-          key: "User-Agent"
-          value: "Good-MITM"
-    - modify-response:
-        body:
-          origin: "zu1k"
-          new: "zu2k"

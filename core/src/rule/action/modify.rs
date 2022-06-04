@@ -1,7 +1,8 @@
 use cookie::{Cookie, CookieJar};
-use http::HeaderValue;
+use http::{header::HeaderName, HeaderValue};
 use hyper::{body::*, header, Body, HeaderMap, Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 use crate::cache::get_regex;
 
@@ -231,10 +232,16 @@ impl Modify {
     fn modify_header<'a>(&self, header: &mut HeaderMap, md: &'a MapModify) {
         if md.remove {
             header.remove(&md.key);
-        } else if let Some(h) = header.get_mut(&md.key) {
-            if let Some(ref md) = md.value {
-                let new_header_value = md.exec_action(h.to_str().unwrap_or_default());
+        } else if let Some(ref text_md) = md.value {
+            if let Some(h) = header.get_mut(&md.key) {
+                let new_header_value = text_md.exec_action(h.to_str().unwrap_or_default());
                 *h = header::HeaderValue::from_str(new_header_value.as_str()).unwrap();
+            } else {
+                let new_header_value = text_md.exec_action("");
+                header.append(
+                    HeaderName::from_str(&md.key).unwrap(),
+                    header::HeaderValue::from_str(new_header_value.as_str()).unwrap(),
+                );
             }
         }
     }

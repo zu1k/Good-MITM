@@ -6,110 +6,102 @@
 
 根据需要修改的内容的位置，修改器分为以下几类：
 
-- Header(TextModify)
-- Cookie(CookieModify)
+- Header(MapModify)
+- Cookie(MapModify)
 - Body(TextModify)
 
-### TextModify
+### TextModify 文本修改器
 
-可以看到Header和Body修改目前都是TextModify类型，目前还仅支持这种方式，其他修改方式仍待开发
+`TextModify` 主要对文本就行修改，目前支持两种方式：
 
-`TextModify`主要对文本就行修改，目前支持两种方式：
+- 直接设置文本内容
+- 普通替换或者正则替换
 
-- `plain`: 普通的替换
-- `regex`: 正则替换
+#### 直接设置
 
-#### plain
-
-对于plain类型的替换，如果origin内容为空，内容将被直接重置为new的内容
+对于plain类型直接设置，内容将被直接重置为指定文本
 
 ```yaml
 - name: "modify response body plain"
-  filters: all
-  actions:
+  filter:
+    domain: '126.com'
+  action:
     modify-response:
-      body:
-        type: plain
-        origin: '1234'
-        new: '5678'
+      body: "Hello 126.com, from Good-MITM"
 ```
 
-#### regex
+#### 替换
+
+替换支持简单替换和正则替换两种
+
+##### 简单替换
 
 ```yaml
-- name: "modify response body regex"
-  filters: all
-  actions:
+- name: "modify response body replace"
+  filter:
+    domain-suffix: '163.com'
+  action:
     modify-response:
       body:
-        type: regex
-        origin: '(\d{4})'
-        new: 'number: $1'
+        origin: "网易首页"
+        new: "Good-MITM 首页"
 ```
 
-### Header修改
+##### 正则替换
+
+```yaml
+- name: "modify response body regex replace"
+  filter:
+    domain-suffix: 'zu1k.com'
+  action:
+    - modify-response:
+        body:
+          re: '(\d{4})'
+          new: 'maybe $1'
+
+```
+
+### MapModify 字典修改器
+
+`MapModify` 字典修改器主要针对字典类型的位置进行修改，例如 `header` 和 `cookies`
+
+`key` 代表字典的键，必须指定
+
+`value` 是 `TextModify` 类型，按照上文方法书写
+
+如果指定 `remove` 为 `true`，则会删除该键值对
 
 ```yaml
 - name: "modify response header"
   filter:
-    domain-suffix: 'zu1k.com'
+    domain: '126.com'
   action:
-    modify-response:
-      header:
-        type: plain
-        origin: "2021"
-        new: "2022"
+    - modify-response:
+        header:
+          key: date
+          value:
+            origin: "2022"
+            new: "1999"
+    - modify-response:
+        header:
+          key: new-header-item
+          value: Good-MITM
+    - modify-response:
+        header:
+          key: server
+          remove: true
 ```
+
+### Header 修改
+
+见 `MapModify` 部分方法
+
+### Cookie 修改
+
+与 Header 修改方法一致
+
+如果指定 `remove` 为 `true` 还会同时对应的移除`set-cookie`项
 
 ### Body修改
 
-```yaml
-- name: "奈菲影视去广告"
-  mitm: "*nfmovies*"
-  filters:
-    url-regex: '(nfmovies)(?!.*?(\.css|\.js|\.jpeg|\.png|\.gif)).*'
-  actions:
-    modify-response:
-      body:
-        type: plain
-        origin: '<head>'
-        new: '<link rel="stylesheet" href="https://limbopro.com/CSS/nfmovies.css"......'
-```
-
-### Cookie修改
-
-一个Cookie修改项包括3部分内容：
-
-- `name`: 必须
-- `value`: 可选，修改对应的cookie值为此值，`value`和下面的`remove`必须二选一
-- `remove`: 可选，true代表移除该cookie项，在修改返回中还会同时对应的移除`set-cookie`项
-
-
-```yaml
-- name: "netflix-cookie"
-  mitm: "*netflix.com"
-  filter:
-    - domain-keyword: "netflix"
-  action:
-    - modify-request:
-        cookies:
-          - name: "SecureNetflixId"
-            value: "v%3D2%26mac%3DAQEAEQABABRiIX7pSoMK5G63rb8i4HAjsQ10......"
-          - name: "flwssn"
-            value: "febad29a-525f-4826-adf0-5e2d94011f72"
-          - name: "nfvdid"
-            value: "BQFmAAEBEEQy-bkd94fIPbMYcvG6Bcxg_4deRrSnzaJFMK1vmunodPN......"
-          - name: "NetflixId"
-            value: "v%3D2%26ct%3DBQAOAAEBEDhNm4B4vl_L8vBhlDhpUqqB0Iti......"
-    - modify-response:
-        cookies:
-          - name: "SecureNetflixId"
-            remove: true
-          - name: "flwssn"
-            remove: true
-          - name: "nfvdid"
-            remove: true
-          - name: "NetflixId"
-            remove: true
-
-```
+见 `TextModify` 部分
