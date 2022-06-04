@@ -1,6 +1,7 @@
 use cookie::{Cookie, CookieJar};
-use http::{header::HeaderName, HeaderValue};
+use http::{header::HeaderName, HeaderValue, Uri};
 use hyper::{body::*, header, Body, HeaderMap, Request, Response, StatusCode};
+use log::error;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -53,14 +54,24 @@ pub struct MapModify {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Modify {
+    Url(TextModify),
     Header(MapModify),
     Cookie(MapModify),
     Body(TextModify),
 }
 
 impl Modify {
-    pub async fn modify_req(&self, req: Request<Body>) -> Option<Request<Body>> {
+    pub async fn modify_req(&self, mut req: Request<Body>) -> Option<Request<Body>> {
         match self {
+            Modify::Url(md) => {
+                let origin = req.uri().to_string();
+                let new_url = md.exec_action(&origin);
+                match Uri::from_str(&new_url) {
+                    Ok(uri) => *req.uri_mut() = uri,
+                    Err(err) => error!("url modify error: {}", err),
+                }
+                Some(req)
+            }
             Modify::Body(bm) => {
                 let (parts, body) = req.into_parts();
                 if match parts.headers.get(header::CONTENT_TYPE) {
@@ -133,7 +144,7 @@ impl Modify {
 
     pub async fn modify_res(&self, res: Response<Body>) -> Response<Body> {
         match self {
-            Self::Body(bm) => {
+            Modify::Body(bm) => {
                 let (parts, body) = res.into_parts();
                 if match parts.headers.get(header::CONTENT_TYPE) {
                     Some(content_type) => {
@@ -183,7 +194,7 @@ impl Modify {
                 for sc in set_cookies {
                     let sc = sc.to_str().unwrap().to_string();
                     if let Ok(c) = Cookie::parse(sc) {
-                        set_cookies_jar.add(c)
+                        set_cookies_jar.add(c);
                     }
                 }
 
@@ -224,6 +235,10 @@ impl Modify {
                     );
                 }
 
+                res
+            }
+            Modify::Url(_) => {
+                error!("modify response url not supported");
                 res
             }
         }

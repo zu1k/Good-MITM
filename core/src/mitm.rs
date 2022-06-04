@@ -51,7 +51,7 @@ impl MitmProxy {
         }
     }
 
-    async fn process_request(self, mut req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    async fn process_request(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         let mut ctx = HttpContext {
             uri: None,
             should_modify_response: false,
@@ -78,14 +78,13 @@ impl MitmProxy {
                 .unwrap());
         }
 
-        req.headers_mut().remove(http::header::HOST);
-        req.headers_mut().remove(http::header::ACCEPT_ENCODING);
-
         let mut req = match self.http_handler.handle_request(&mut ctx, req).await {
             RequestOrResponse::Request(req) => req,
             RequestOrResponse::Response(res) => return Ok(res),
         };
 
+        req.headers_mut().remove(http::header::HOST);
+        req.headers_mut().remove(http::header::ACCEPT_ENCODING);
         req.headers_mut().remove(http::header::CONTENT_LENGTH);
 
         let mut res = match self.client {

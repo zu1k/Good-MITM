@@ -22,3 +22,13 @@
         body:
           re: '(\d{4})'
           new: 'maybe $1'
+
+# access: https://www.baidu.com/s?wd=good-mitm
+- name: "modify request url"
+  filter:
+    domain-suffix: 'baidu.com'
+  action:
+    - modify-request:
+        url:
+          re: 'https:\/\/www\.baidu\.com\/s\?wd=(.*)'
+          new: 'https://www.google.com/search?q=$1'
