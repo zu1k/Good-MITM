@@ -6,7 +6,7 @@ use super::SingleOrMulti;
 pub struct Rule {
     pub name: String,
     #[serde(alias = "mitm")]
-    pub mitm_list: Option<Vec<String>>,
+    pub mitm_list: Option<SingleOrMulti<String>>,
     #[serde(alias = "filter")]
     pub filters: SingleOrMulti<core::rule::Filter>,
     #[serde(alias = "action")]
@@ -28,7 +28,7 @@ impl From<Rule> for (core::rule::Rule, Vec<String>) {
             .collect();
 
         let mut mitm_list_2 = match rule.mitm_list {
-            Some(s) => s.into_iter().collect(),
+            Some(s) => s.into_vec().into_iter().collect(),
             None => vec![],
         };
         mitm_filters.append(&mut mitm_list_2);

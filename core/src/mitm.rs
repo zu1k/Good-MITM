@@ -6,7 +6,8 @@ use crate::{
 };
 use http::{header, uri::PathAndQuery, HeaderValue, Uri};
 use hyper::{
-    server::conn::Http, service::service_fn, upgrade::Upgraded, Body, Method, Request, Response,
+    body::HttpBody, server::conn::Http, service::service_fn, upgrade::Upgraded, Body, Method,
+    Request, Response,
 };
 use log::*;
 use std::sync::Arc;
@@ -80,10 +81,12 @@ impl MitmProxy {
         req.headers_mut().remove(http::header::HOST);
         req.headers_mut().remove(http::header::ACCEPT_ENCODING);
 
-        let req = match self.http_handler.handle_request(&mut ctx, req).await {
+        let mut req = match self.http_handler.handle_request(&mut ctx, req).await {
             RequestOrResponse::Request(req) => req,
             RequestOrResponse::Response(res) => return Ok(res),
         };
+
+        req.headers_mut().remove(http::header::CONTENT_LENGTH);
 
         let mut res = match self.client {
             HttpClient::Proxy(client) => client.request(req).await?,
@@ -94,7 +97,14 @@ impl MitmProxy {
         // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
         res.headers_mut().remove(header::STRICT_TRANSPORT_SECURITY);
 
-        Ok(self.http_handler.handle_response(&mut ctx, res).await)
+        let mut resp = self.http_handler.handle_response(&mut ctx, res).await;
+        let length = resp.size_hint().lower();
+
+        if let Some(content_length) = resp.headers_mut().get_mut(http::header::CONTENT_LENGTH) {
+            *content_length = HeaderValue::from_str(&length.to_string()).unwrap();
+        }
+
+        Ok(resp)
     }
 
     async fn process_connect(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {

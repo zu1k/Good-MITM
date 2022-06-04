@@ -1,6 +1,6 @@
 - name: "redirect"
   filter:
-    domain: 'none.zu1k.com'
+    domain: "redirect.zu1k.com"
   action:
     redirect: "https://zu1k.com/"
 
@@ -16,12 +16,15 @@
     domain-keyword: 'csdn'
   action: reject
 
-- name: "modify response header"
+- name: "modify response"
   filter:
     domain-suffix: 'zu1k.com'
   action:
-    modify-response:
-      header:
-        type: plain
-        origin: "2021"
-        new: "2022"
+    - modify-request:
+        header:
+          key: "User-Agent"
+          value: "Good-MITM"
+    - modify-response:
+        body:
+          origin: "zu1k"
+          new: "zu2k"

@@ -10,6 +10,5 @@
   action:
     modify-response:
       body:
-        type: regex
-        re: '(\d{2,6})'
-        new: '(maybe $1 + 1)'
+        re: '(\d{4})'
+        new: 'maybe $1'

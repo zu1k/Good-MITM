@@ -5,7 +5,6 @@
   actions:
     modify-response:
       body:
-        type: plain
         origin: '<head>'
         new: '<link rel="stylesheet" href="https://limbopro.com/CSS/nfmovies.css" type="text/css"><script type="text/javascript"  src="//limbopro.com/Adguard/nfmovies.js"></script></head>'
 
@@ -15,7 +14,6 @@
   actions:
     modify-response:
       body:
-        type: plain
         origin: '<head>'
         new: '<head><link rel="stylesheet" href="https://limbopro.com/CSS/ddrk.css" type="text/css"><script type="text/javascript" src="//limbopro.com/Adguard/ddrk.js"></script>'
 
@@ -25,7 +23,6 @@
   actions:
     modify-response:
       body:
-        type: plain
         origin: '</body>'
         new: '<link rel="stylesheet" href="https://limbopro.com/CSS/mypianku.css" type="text/css"><script type="text/javascript" src="//limbopro.com/Adguard/mypianku.js"></script></body>'
 

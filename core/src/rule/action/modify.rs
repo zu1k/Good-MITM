@@ -1,67 +1,42 @@
 use cookie::{Cookie, CookieJar};
-use enum_dispatch::enum_dispatch;
 use http::HeaderValue;
 use hyper::{body::*, header, Body, HeaderMap, Request, Response, StatusCode};
 use serde::{Deserialize, Serialize};
 
 use crate::cache::get_regex;
 
-#[enum_dispatch]
-pub trait TextAction {
-    fn exec_action(&self, origin: &str) -> String;
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum TextModify {
+    Set(String),
+    Complect(TextModifyComplext),
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct Replace {
+pub struct TextModifyComplext {
     pub origin: Option<String>,
+    pub re: Option<String>,
     pub new: String,
 }
 
-impl TextAction for Replace {
-    fn exec_action(&self, origin: &str) -> String {
-        match self.origin.clone() {
-            Some(ref o) => origin.replace(o, &self.new),
-            None => self.new.clone(),
+impl TextModify {
+    fn exec_action(&self, text: &str) -> String {
+        match self {
+            TextModify::Set(new) => new.to_string(),
+            TextModify::Complect(md) => {
+                if let Some(ref origin) = md.origin {
+                    return text.replace(origin, &md.new);
+                }
+
+                if let Some(ref re) = md.re {
+                    return get_regex(re).replace_all(text, &md.new).to_string();
+                }
+
+                md.new.clone()
+            }
         }
     }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case")]
-pub struct RegexReplace {
-    pub re: String,
-    pub new: String,
-}
-
-impl TextAction for RegexReplace {
-    fn exec_action(&self, origin: &str) -> String {
-        get_regex(&self.re)
-            .replace_all(origin, &self.new)
-            .to_string()
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct TextSet(String);
-
-impl TextAction for TextSet {
-    fn exec_action(&self, _origin: &str) -> String {
-        self.0.clone()
-    }
-}
-
-#[enum_dispatch(TextAction)]
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "kebab-case")]
-#[serde(tag = "type")]
-pub enum TextModify {
-    #[serde(rename = "set")]
-    TextSet,
-    #[serde(rename = "plain")]
-    Replace,
-    #[serde(rename = "regex")]
-    RegexReplace,
 }
 
 #[derive(Default, Debug, Clone, Deserialize, Serialize)]
@@ -77,9 +52,8 @@ pub struct MapModify {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum Modify {
-    Header(Vec<MapModify>),
-    #[serde(alias = "cookie")]
-    Cookies(Vec<MapModify>),
+    Header(MapModify),
+    Cookie(MapModify),
     Body(TextModify),
 }
 
@@ -110,12 +84,12 @@ impl Modify {
                     Some(Request::from_parts(parts, body))
                 }
             }
-            Modify::Header(hms) => {
+            Modify::Header(hm) => {
                 let mut req = req;
-                self.modify_header(req.headers_mut(), hms.iter());
+                self.modify_header(req.headers_mut(), hm);
                 Some(req)
             }
-            Modify::Cookies(cookies_mod) => {
+            Modify::Cookie(md) => {
                 let mut req = req;
                 let mut cookies_jar = CookieJar::new();
 
@@ -129,22 +103,21 @@ impl Modify {
                     }
                 }
 
-                for c in cookies_mod.clone().into_iter() {
-                    if c.remove {
-                        cookies_jar.remove(Cookie::named(c.key))
-                    } else {
-                        let new_cookie_value = c
-                            .value
-                            .map(|md| {
-                                let origin_cookie_value = cookies_jar
-                                    .get(&c.key)
-                                    .map(|c| c.value().to_string())
-                                    .unwrap_or_default();
-                                md.exec_action(&origin_cookie_value)
-                            })
-                            .unwrap_or_default();
-                        cookies_jar.add(Cookie::new(c.key, new_cookie_value))
-                    }
+                if md.remove {
+                    cookies_jar.remove(Cookie::named(md.key.clone()))
+                } else {
+                    let new_cookie_value = md
+                        .value
+                        .to_owned()
+                        .map(|text_md| {
+                            let origin_cookie_value = cookies_jar
+                                .get(&md.key)
+                                .map(|c| c.value().to_string())
+                                .unwrap_or_default();
+                            text_md.exec_action(&origin_cookie_value)
+                        })
+                        .unwrap_or_default();
+                    cookies_jar.add(Cookie::new(md.key.clone(), new_cookie_value))
                 }
 
                 let cookies: Vec<String> = cookies_jar.iter().map(|c| c.to_string()).collect();
@@ -185,12 +158,12 @@ impl Modify {
                     Response::from_parts(parts, body)
                 }
             }
-            Modify::Header(mds) => {
+            Modify::Header(md) => {
                 let mut res = res;
-                self.modify_header(res.headers_mut(), mds.iter());
+                self.modify_header(res.headers_mut(), md);
                 res
             }
-            Modify::Cookies(cookies_mod) => {
+            Modify::Cookie(md) => {
                 let mut res = res;
 
                 let mut cookies_jar = CookieJar::new();
@@ -213,29 +186,28 @@ impl Modify {
                     }
                 }
 
-                for c in cookies_mod.clone().into_iter() {
-                    if c.remove {
-                        cookies_jar.remove(Cookie::named(c.key.clone()));
-                        set_cookies_jar.remove(Cookie::named(c.key));
-                    } else {
-                        let new_cookie_value = c
-                            .value
-                            .map(|md| {
-                                let origin_cookie_value = cookies_jar
-                                    .get(&c.key)
-                                    .map(|c| c.value().to_string())
-                                    .or_else(|| {
-                                        set_cookies_jar.get(&c.key).map(|c| c.value().to_string())
-                                    })
-                                    .unwrap_or_default();
-                                md.exec_action(&origin_cookie_value)
-                            })
-                            .unwrap_or_default();
+                if md.remove {
+                    cookies_jar.remove(Cookie::named(md.key.clone()));
+                    set_cookies_jar.remove(Cookie::named(md.key.clone()));
+                } else {
+                    let new_cookie_value = md
+                        .value
+                        .to_owned()
+                        .map(|text_md| {
+                            let origin_cookie_value = cookies_jar
+                                .get(&md.key)
+                                .map(|c| c.value().to_string())
+                                .or_else(|| {
+                                    set_cookies_jar.get(&md.key).map(|c| c.value().to_string())
+                                })
+                                .unwrap_or_default();
+                            text_md.exec_action(&origin_cookie_value)
+                        })
+                        .unwrap_or_default();
 
-                        let c = Cookie::new(c.key, new_cookie_value);
-                        cookies_jar.add(c.clone());
-                        set_cookies_jar.add(c.clone());
-                    }
+                    let c = Cookie::new(md.key.clone(), new_cookie_value);
+                    cookies_jar.add(c.clone());
+                    set_cookies_jar.add(c.clone());
                 }
 
                 let cookies: Vec<String> = cookies_jar.iter().map(|c| c.to_string()).collect();
@@ -256,15 +228,13 @@ impl Modify {
         }
     }
 
-    fn modify_header<'a>(&self, header: &mut HeaderMap, mds: impl Iterator<Item = &'a MapModify>) {
-        for md in mds {
-            if md.remove {
-                header.remove(&md.key);
-            } else if let Some(h) = header.get_mut(&md.key) {
-                if let Some(ref md) = md.value {
-                    let new_header_value = md.exec_action(h.to_str().unwrap_or_default());
-                    *h = header::HeaderValue::from_str(new_header_value.as_str()).unwrap();
-                }
+    fn modify_header<'a>(&self, header: &mut HeaderMap, md: &'a MapModify) {
+        if md.remove {
+            header.remove(&md.key);
+        } else if let Some(h) = header.get_mut(&md.key) {
+            if let Some(ref md) = md.value {
+                let new_header_value = md.exec_action(h.to_str().unwrap_or_default());
+                *h = header::HeaderValue::from_str(new_header_value.as_str()).unwrap();
             }
         }
     }
