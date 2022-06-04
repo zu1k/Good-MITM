@@ -2,6 +2,10 @@
 name = "good-mitm-core"
 version = "0.1.0"
 edition = "2021"
+description = "Use MITM technology to provide features like rewrite, redirect."
+homepage = "https://github.com/zu1k/good-mitm"
+repository = "https://github.com/zu1k/good-mitm"
+license = "MIT"
 
 [dependencies]
 anyhow = "1.0"
