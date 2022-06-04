@@ -11,8 +11,8 @@ cookie = "0.16"
 fancy-regex = "0.10"
 http = "0.2"
 hyper = { version = "0.14", features = ["client", "http1", "server", "stream", "tcp"]  }
-hyper-proxy = { version = "0.9", default-features = false, features = ["rustls-webpki"] }
-hyper-rustls = { version = "0.23", features = ["http2", "webpki-tokio"] }
+hyper-proxy = { version = "0.9", default-features = false }
+hyper-rustls = { version = "0.23", features = ["http2"] }
 log = "0.4"
 moka = { version = "0.8", features = ["future"] }
 rcgen = { version = "0.9", features = ["x509-parser"] }

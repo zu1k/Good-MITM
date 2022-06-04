@@ -29,10 +29,7 @@ pub fn gen_client(upstream_proxy: Option<UpstreamProxy>) -> HttpClient {
         .build();
 
     if let Some(proxy) = upstream_proxy {
-        // The following can only panic when using the "rustls" hyper_proxy feature
-        let connector = ProxyConnector::from_proxy(https, proxy)
-            .expect("Failed to create upstream proxy connector");
-
+        let connector = ProxyConnector::from_proxy_unsecured(https, proxy);
         return HttpClient::Proxy(
             Client::builder()
                 .http1_title_case_headers(true)
