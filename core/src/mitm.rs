@@ -41,13 +41,18 @@ pub(crate) struct MitmProxy {
 
 impl MitmProxy {
     pub(crate) async fn proxy(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
-        match if req.method() == Method::CONNECT {
+        let res = if req.method() == Method::CONNECT {
             self.process_connect(req).await
         } else {
             self.process_request(req).await
-        } {
-            Ok(resp) => Ok(allow_all_cros(resp)),
-            Err(e) => Err(e),
+        };
+
+        match res {
+            Ok(mut res) => {
+                allow_all_cros(&mut res);
+                Ok(res)
+            }
+            Err(err) => Err(err),
         }
     }
 
@@ -67,15 +72,7 @@ impl MitmProxy {
                 .unwrap_or_default()
                 .contains("cert.mitm")
         {
-            return Ok(Response::builder()
-                .header(
-                    http::header::CONTENT_DISPOSITION,
-                    "attachment; filename=good-mitm.crt",
-                )
-                .header(http::header::CONTENT_TYPE, "application/octet-stream")
-                .status(http::StatusCode::OK)
-                .body(Body::from(self.ca.clone().get_cert()))
-                .unwrap());
+            return Ok(self.get_cert_res());
         }
 
         let mut req = match self.http_handler.handle_request(&mut ctx, req).await {
@@ -83,27 +80,34 @@ impl MitmProxy {
             RequestOrResponse::Response(res) => return Ok(res),
         };
 
-        req.headers_mut().remove(http::header::HOST);
-        req.headers_mut().remove(http::header::ACCEPT_ENCODING);
-        req.headers_mut().remove(http::header::CONTENT_LENGTH);
+        {
+            let header_mut = req.headers_mut();
+            header_mut.remove(http::header::HOST);
+            header_mut.remove(http::header::ACCEPT_ENCODING);
+            header_mut.remove(http::header::CONTENT_LENGTH);
+        }
 
-        let mut res = match self.client {
+        let res = match self.client {
             HttpClient::Proxy(client) => client.request(req).await?,
             HttpClient::Https(client) => client.request(req).await?,
         };
 
-        // Remove `Strict-Transport-Security` to avoid HSTS
-        // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
-        res.headers_mut().remove(header::STRICT_TRANSPORT_SECURITY);
+        let mut res = self.http_handler.handle_response(&mut ctx, res).await;
+        let length = res.size_hint().lower();
 
-        let mut resp = self.http_handler.handle_response(&mut ctx, res).await;
-        let length = resp.size_hint().lower();
+        {
+            let header_mut = res.headers_mut();
 
-        if let Some(content_length) = resp.headers_mut().get_mut(http::header::CONTENT_LENGTH) {
-            *content_length = HeaderValue::from_str(&length.to_string()).unwrap();
+            if let Some(content_length) = header_mut.get_mut(http::header::CONTENT_LENGTH) {
+                *content_length = HeaderValue::from_str(&length.to_string()).unwrap();
+            }
+
+            // Remove `Strict-Transport-Security` to avoid HSTS
+            // See: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Strict-Transport-Security
+            header_mut.remove(header::STRICT_TRANSPORT_SECURITY);
         }
 
-        Ok(resp)
+        Ok(res)
     }
 
     async fn process_connect(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
@@ -186,16 +190,26 @@ impl MitmProxy {
             .with_upgrades()
             .await
     }
+
+    fn get_cert_res(&self) -> hyper::Response<Body> {
+        Response::builder()
+            .header(
+                http::header::CONTENT_DISPOSITION,
+                "attachment; filename=good-mitm.crt",
+            )
+            .header(http::header::CONTENT_TYPE, "application/octet-stream")
+            .status(http::StatusCode::OK)
+            .body(Body::from(self.ca.clone().get_cert()))
+            .unwrap()
+    }
 }
 
-fn allow_all_cros(resp: Response<Body>) -> Response<Body> {
-    let mut resp = resp;
-    let header = resp.headers_mut();
+fn allow_all_cros(res: &mut Response<Body>) {
+    let header_mut = res.headers_mut();
     let all = HeaderValue::from_str("*").unwrap();
-    header.insert(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, all.clone());
-    header.insert(http::header::ACCESS_CONTROL_ALLOW_METHODS, all.clone());
-    header.insert(http::header::ACCESS_CONTROL_ALLOW_METHODS, all);
-    resp
+    header_mut.insert(http::header::ACCESS_CONTROL_ALLOW_ORIGIN, all.clone());
+    header_mut.insert(http::header::ACCESS_CONTROL_ALLOW_METHODS, all.clone());
+    header_mut.insert(http::header::ACCESS_CONTROL_ALLOW_METHODS, all);
 }
 
 fn host_addr(uri: &http::Uri) -> Option<String> {

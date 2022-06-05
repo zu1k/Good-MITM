@@ -2,16 +2,17 @@ use crate::error::Error;
 use cookie::time::OffsetDateTime;
 use http::uri::Authority;
 use moka::future::Cache;
+use rand::{thread_rng, Rng};
 use rcgen::{
     DistinguishedName, DnType, ExtendedKeyUsagePurpose, KeyPair, KeyUsagePurpose, RcgenError,
     SanType,
 };
-use std::{
-    sync::{Arc, Mutex},
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::sync::Arc;
 use time::ext::NumericalDuration;
 use tokio_rustls::rustls::{self, ServerConfig};
+
+const CERT_TTL_DAYS: u64 = 365;
+const CERT_CACHE_TTL_SECONDS: u64 = CERT_TTL_DAYS * 24 * 60 * 60 / 2;
 
 /// Issues certificates for use when communicating with clients.
 ///
@@ -24,7 +25,6 @@ pub struct CertificateAuthority {
     ca_cert: rustls::Certificate,
     ca_cert_string: String,
     cache: Cache<Authority, Arc<ServerConfig>>,
-    serial_number: Arc<Mutex<u64>>,
 }
 
 impl CertificateAuthority {
@@ -42,8 +42,10 @@ impl CertificateAuthority {
             private_key,
             ca_cert,
             ca_cert_string,
-            cache: Cache::new(cache_size),
-            serial_number: Arc::new(Mutex::new(now_seconds())),
+            cache: Cache::builder()
+                .max_capacity(cache_size)
+                .time_to_live(std::time::Duration::from_secs(CERT_CACHE_TTL_SECONDS))
+                .build(),
         };
 
         ca.validate()?;
@@ -74,15 +76,9 @@ impl CertificateAuthority {
     fn gen_cert(&self, authority: &Authority) -> rustls::Certificate {
         let mut params = rcgen::CertificateParams::default();
 
-        {
-            let serial_number = Arc::clone(&self.serial_number);
-            let mut serial_number = serial_number.lock().unwrap();
-            params.serial_number = Some(*serial_number);
-            *serial_number += 1;
-        }
-
+        params.serial_number = Some(thread_rng().gen::<u64>());
         params.not_before = OffsetDateTime::now_utc().saturating_sub(1.days());
-        params.not_after = OffsetDateTime::now_utc().saturating_add(52.weeks());
+        params.not_after = OffsetDateTime::now_utc().saturating_add((CERT_TTL_DAYS as i64).days());
         params
             .subject_alt_names
             .push(SanType::DnsName(authority.host().to_string()));
@@ -124,12 +120,4 @@ impl CertificateAuthority {
     pub fn get_cert(&self) -> String {
         self.ca_cert_string.clone()
     }
-}
-
-fn now_seconds() -> u64 {
-    let start = SystemTime::now();
-    let since_the_epoch = start
-        .duration_since(UNIX_EPOCH)
-        .expect("Time went backwards");
-    since_the_epoch.as_secs()
 }
