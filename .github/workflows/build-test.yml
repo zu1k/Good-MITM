@@ -1,6 +1,6 @@
 on: [push, pull_request_target]
 
-name: Build
+name: Build Test
 
 jobs:
   build:
