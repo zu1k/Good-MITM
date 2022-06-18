@@ -37,6 +37,8 @@ CROSS_TARGET_LIST = \
 	i686-unknown-linux-musl \
 	aarch64-unknown-linux-musl \
 	armv7-unknown-linux-musleabihf \
+	x86_64-apple-darwin \
+	aarch64-apple-darwin \
 
 $(CROSS_TARGET_LIST):
 	$(CROSS_BUILD) $@
