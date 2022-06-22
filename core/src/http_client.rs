@@ -6,6 +6,7 @@ use std::time::SystemTime;
 cfg_if::cfg_if! {
     if #[cfg(feature = "request-native-tls")] {
         use hyper_tls::HttpsConnector;
+        use hyper_tls::native_tls::TlsConnector;
     } else {
         use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
         use rustls::ClientConfig;
@@ -22,7 +23,17 @@ pub enum HttpClient {
 pub fn gen_client(upstream_proxy: Option<UpstreamProxy>) -> HttpClient {
     cfg_if::cfg_if! {
         if #[cfg(feature = "request-native-tls")] {
-            let https = { HttpsConnector::new() };
+            let https = {
+                let tls = TlsConnector::builder()
+                    .danger_accept_invalid_certs(true)
+                    .danger_accept_invalid_hostnames(true)
+                    .disable_built_in_roots(true)
+                    .build()
+                    .unwrap();
+                let mut http = HttpConnector::new();
+                http.enforce_http(false);
+                HttpsConnector::from((http, tls.into()))
+            };
         } else {
             let https = {
                 let https_builder = HttpsConnectorBuilder::new()
