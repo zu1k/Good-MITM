@@ -5,8 +5,7 @@ use std::time::SystemTime;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "request-native-tls")] {
-        use hyper_tls::HttpsConnector;
-        use hyper_tls::native_tls::TlsConnector;
+        use hyper_tls::{HttpsConnector, native_tls::TlsConnector};
     } else {
         use hyper_rustls::{HttpsConnector, HttpsConnectorBuilder};
         use rustls::ClientConfig;
