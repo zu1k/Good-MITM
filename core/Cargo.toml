@@ -1,6 +1,6 @@
 [package]
 name = "good-mitm-core"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Use MITM technology to provide features like rewrite, redirect."
 homepage = "https://github.com/zu1k/good-mitm"
@@ -21,6 +21,7 @@ hyper-rustls = { version = "0.23" }
 hyper-tls = { version = "0.5", optional = true }
 log = "0.4"
 moka = { version = "0.8", features = ["future"] }
+openssl = { version = "0.10", features = ["vendored"], optional = true }
 rcgen = { version = "0.9", features = ["x509-parser"] }
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1"
@@ -36,5 +37,5 @@ rand = "0.8.5"
 
 [features]
 default = ["h2", "request-native-tls"]
-request-native-tls = ["hyper-tls"]
+request-native-tls = ["hyper-tls", "openssl"]
 h2 = ["hyper-rustls/http2"]

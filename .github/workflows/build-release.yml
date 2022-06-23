@@ -43,6 +43,8 @@ jobs:
 
       - name: Build ${{ matrix.target }}
         timeout-minutes: 120
+        env:
+          PKG_CONFIG_ALLOW_CROSS: "1"
         run: |
           compile_target=${{ matrix.target }}
 
@@ -76,11 +78,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Install GNU tar
+      - name: Install Dependences
         if: runner.os == 'macOS'
         run: |
-          brew install gnu-tar
-          # echo "::add-path::/usr/local/opt/gnu-tar/libexec/gnubin"
+          brew install gnu-tar pkg-config openssl
           echo "/usr/local/opt/gnu-tar/libexec/gnubin" >> $GITHUB_PATH
 
       - name: Install Rust
