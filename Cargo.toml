@@ -19,7 +19,7 @@ codegen-units = 1
 
 [dependencies]
 anyhow = "1.0"
-clap = { version = "3.0", features = ["derive"] }
+clap = { version = "3.2", features = ["derive"] }
 core = { path = "./core", package = "good-mitm-core" }
 rcgen = { version = "0.9", features = ["x509-parser"] }
 thiserror = "1"
