@@ -10,7 +10,7 @@ license = "MIT"
 [dependencies]
 anyhow = "1.0"
 bytes = { version = "1", features = ["serde"] }
-cached = "0.34"
+cached = "0.37"
 cfg-if = "1"
 cookie = "0.16"
 fancy-regex = "0.10"
@@ -20,7 +20,7 @@ hyper-proxy = { version = "0.9", default-features = false }
 hyper-rustls = { version = "0.23" }
 hyper-tls = { version = "0.5", optional = true }
 log = "0.4"
-moka = { version = "0.8", features = ["future"] }
+moka = { version = "0.9", features = ["future"] }
 openssl = { version = "0.10", features = ["vendored"], optional = true }
 rcgen = { version = "0.9", features = ["x509-parser"] }
 serde = { version = "1.0", features = ["derive"] }

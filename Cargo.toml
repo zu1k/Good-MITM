@@ -30,7 +30,7 @@ serde_yaml = "0.8"
 hyper-proxy = { version = "0.9", default-features = false }
 rustls-pemfile = "1.0"
 tokio = { version = "1", features = ["rt", "signal"] }
-rustls = "0.20.6"
+rustls = "0.20"
 
 
 [workspace]
