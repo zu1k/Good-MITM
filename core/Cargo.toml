@@ -1,6 +1,6 @@
 [package]
 name = "good-mitm-core"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "Use MITM technology to provide features like rewrite, redirect."
 homepage = "https://github.com/zu1k/good-mitm"
