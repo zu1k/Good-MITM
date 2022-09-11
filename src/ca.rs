@@ -1,6 +1,5 @@
-extern crate rcgen;
+use core::rcgen::*;
 use log::error;
-use rcgen::*;
 use std::fs;
 
 pub fn gen_ca() -> Certificate {

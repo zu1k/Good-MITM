@@ -683,7 +683,6 @@ dependencies = [
  "good-mitm-core",
  "hyper-proxy",
  "log",
- "rcgen",
  "rustls",
  "rustls-pemfile",
  "serde",
@@ -698,6 +697,7 @@ name = "good-mitm-core"
 version = "0.1.2"
 dependencies = [
  "anyhow",
+ "async-trait",
  "bytes",
  "cached",
  "cfg-if",

@@ -46,7 +46,7 @@ pub fn install_cert() {
 fn cmd_with_sudo(cmd: Vec<&str>) -> Command {
     let mut cmd = cmd;
     if unsafe { libc::getegid() } == 0 {
-        let mut command = Command::new(&cmd[0]);
+        let mut command = Command::new(cmd[0]);
         command.args(&cmd[1..]);
         return command;
     }

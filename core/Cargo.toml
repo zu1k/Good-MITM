@@ -34,8 +34,10 @@ wildmatch = "2.1"
 quick-js = { version = "0.4", features = ["log"] }
 rustls = { version = "0.20", features = ["dangerous_configuration"] }
 rand = "0.8.5"
+async-trait = "0.1.57"
 
 [features]
 default = ["h2", "request-native-tls"]
 request-native-tls = ["hyper-tls", "openssl"]
 h2 = ["hyper-rustls/http2"]
+custom_handler = []

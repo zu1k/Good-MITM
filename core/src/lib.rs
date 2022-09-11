@@ -1,4 +1,5 @@
-use handler::{HttpHandler, MitmFilter};
+use error::Error;
+use handler::{CustomContextData, HttpHandler, MitmFilter};
 use http_client::gen_client;
 use hyper::{
     server::conn::AddrStream,
@@ -7,23 +8,27 @@ use hyper::{
 };
 use hyper_proxy::Proxy as UpstreamProxy;
 use mitm::MitmProxy;
-use rule::Rule;
-use std::{future::Future, net::SocketAddr, sync::Arc};
+use std::{future::Future, marker::PhantomData, net::SocketAddr, sync::Arc};
 use typed_builder::TypedBuilder;
 
 pub use ca::CertificateAuthority;
-use error::Error;
+pub use rcgen;
 
 mod ca;
 mod cache;
 mod error;
-mod handler;
+pub mod handler;
 mod http_client;
-mod mitm;
+pub mod mitm;
 pub mod rule;
 
 #[derive(TypedBuilder)]
-pub struct Proxy<F: Future<Output = ()>> {
+pub struct Proxy<F, H, D>
+where
+    F: Future<Output = ()>,
+    H: HttpHandler<D>,
+    D: CustomContextData,
+{
     /// The address to listen on.
     pub listen_addr: SocketAddr,
     /// A future that once resolved will cause the proxy server to shut down.
@@ -32,20 +37,24 @@ pub struct Proxy<F: Future<Output = ()>> {
     pub ca: CertificateAuthority,
     pub upstream_proxy: Option<UpstreamProxy>,
 
-    pub rules: Vec<Rule>,
     pub mitm_filters: Vec<String>,
+    pub handler: H,
+
+    #[builder(default)]
+    _custom_contex_data: PhantomData<D>,
 }
 
-impl<F> Proxy<F>
+impl<F, H, D> Proxy<F, H, D>
 where
     F: Future<Output = ()>,
+    H: HttpHandler<D>,
+    D: CustomContextData,
 {
     pub async fn start_proxy(self) -> Result<(), Error> {
         let client = gen_client(self.upstream_proxy);
         let ca = Arc::new(self.ca);
 
-        let rules = Arc::new(self.rules);
-        let http_handler = Arc::new(HttpHandler::new(rules));
+        let http_handler = Arc::new(self.handler);
         let mitm_filter = Arc::new(MitmFilter::new(self.mitm_filters));
 
         let make_service = make_service_fn(move |_conn: &AddrStream| {
@@ -62,6 +71,8 @@ where
 
                         http_handler: Arc::clone(&http_handler),
                         mitm_filter: Arc::clone(&mitm_filter),
+
+                        custom_contex_data: Default::default(),
                     }
                     .proxy(req)
                 }))

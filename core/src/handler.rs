@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use hyper::{header, Body, Request, Response};
 use log::info;
 use std::sync::{Arc, RwLock};
@@ -8,12 +9,40 @@ use crate::{
     rule::Rule,
 };
 
+pub trait CustomContextData: Clone + Default + Send + Sync + 'static {}
+
+#[async_trait]
+pub trait HttpHandler<D: CustomContextData>: Clone + Send + Sync + 'static {
+    async fn handle_request(
+        &self,
+        _ctx: &mut HttpContext<D>,
+        req: Request<Body>,
+    ) -> RequestOrResponse {
+        RequestOrResponse::Request(req)
+    }
+
+    async fn handle_response(
+        &self,
+        _ctx: &mut HttpContext<D>,
+        res: Response<Body>,
+    ) -> Response<Body> {
+        res
+    }
+}
+
 #[derive(Clone)]
-pub struct HttpHandler {
+pub struct RuleHttpHandler {
     rules: Arc<Vec<Rule>>,
 }
 
-impl HttpHandler {
+#[derive(Default, Clone)]
+pub struct RuleHandlerCtx {
+    rules: Vec<Rule>,
+}
+
+impl CustomContextData for RuleHandlerCtx {}
+
+impl RuleHttpHandler {
     pub fn new(rules: Arc<Vec<Rule>>) -> Self {
         Self { rules }
     }
@@ -29,10 +58,13 @@ impl HttpHandler {
         }
         matched
     }
+}
 
-    pub async fn handle_request(
+#[async_trait]
+impl HttpHandler<RuleHandlerCtx> for RuleHttpHandler {
+    async fn handle_request(
         &self,
-        ctx: &mut HttpContext,
+        ctx: &mut HttpContext<RuleHandlerCtx>,
         req: Request<Body>,
     ) -> RequestOrResponse {
         ctx.uri = Some(req.uri().clone());
@@ -47,7 +79,7 @@ impl HttpHandler {
         }
 
         for mut rule in rules {
-            ctx.rule.push(rule.clone());
+            ctx.custom_data.rules.push(rule.clone());
             let rt = rule.do_req(req).await;
             if let RequestOrResponse::Request(r) = rt {
                 req = r;
@@ -59,12 +91,12 @@ impl HttpHandler {
         RequestOrResponse::Request(req)
     }
 
-    pub async fn handle_response(
+    async fn handle_response(
         &self,
-        ctx: &mut HttpContext,
+        ctx: &mut HttpContext<RuleHandlerCtx>,
         res: Response<Body>,
     ) -> Response<Body> {
-        if !ctx.should_modify_response || ctx.rule.is_empty() {
+        if !ctx.should_modify_response || ctx.custom_data.rules.is_empty() {
             return res;
         }
         let uri = ctx.uri.as_ref().unwrap();
@@ -80,8 +112,7 @@ impl HttpHandler {
         );
 
         let mut res = res;
-        let rules = ctx.rule.clone();
-        for rule in rules {
+        for rule in &ctx.custom_data.rules {
             res = rule.do_res(res).await;
         }
         res
@@ -101,7 +132,7 @@ impl MitmFilter {
         }
     }
 
-    pub async fn filter(&self, _ctx: &HttpContext, req: &Request<Body>) -> bool {
+    pub async fn filter(&self, _ctx: &HttpContext<RuleHandlerCtx>, req: &Request<Body>) -> bool {
         let host = req.uri().host().unwrap_or_default();
         let list = self.filters.read().unwrap();
         for m in list.iter() {

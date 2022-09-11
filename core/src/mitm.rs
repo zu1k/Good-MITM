@@ -1,8 +1,7 @@
 use crate::{
     ca::CertificateAuthority,
-    handler::{HttpHandler, MitmFilter},
+    handler::{CustomContextData, HttpHandler, MitmFilter},
     http_client::HttpClient,
-    rule::Rule,
 };
 use http::{header, uri::PathAndQuery, HeaderValue, Uri};
 use hyper::{
@@ -10,7 +9,7 @@ use hyper::{
     Request, Response,
 };
 use log::*;
-use std::sync::Arc;
+use std::{marker::PhantomData, sync::Arc};
 use tokio::net::TcpStream;
 use tokio_rustls::TlsAcceptor;
 
@@ -22,24 +21,34 @@ pub enum RequestOrResponse {
 }
 
 /// Context for HTTP requests and responses.
-#[derive(Clone, Debug)]
-pub struct HttpContext {
+#[derive(Default, Debug)]
+pub struct HttpContext<D: Default + Send + Sync> {
     pub uri: Option<Uri>,
 
     pub should_modify_response: bool,
-    pub rule: Vec<Rule>,
+    pub custom_data: D,
 }
 
 #[derive(Clone)]
-pub(crate) struct MitmProxy {
+pub(crate) struct MitmProxy<H, D>
+where
+    H: HttpHandler<D>,
+    D: CustomContextData,
+{
     pub ca: Arc<CertificateAuthority>,
     pub client: HttpClient,
 
-    pub http_handler: Arc<HttpHandler>,
+    pub http_handler: Arc<H>,
     pub mitm_filter: Arc<MitmFilter>,
+
+    pub custom_contex_data: PhantomData<D>,
 }
 
-impl MitmProxy {
+impl<H, D> MitmProxy<H, D>
+where
+    H: HttpHandler<D>,
+    D: CustomContextData,
+{
     pub(crate) async fn proxy(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         let res = if req.method() == Method::CONNECT {
             self.process_connect(req).await
@@ -60,7 +69,7 @@ impl MitmProxy {
         let mut ctx = HttpContext {
             uri: None,
             should_modify_response: false,
-            rule: vec![],
+            ..Default::default()
         };
 
         if req.uri().path().starts_with("/mitm/cert")
@@ -114,7 +123,7 @@ impl MitmProxy {
         let ctx = HttpContext {
             uri: None,
             should_modify_response: false,
-            rule: vec![],
+            ..Default::default()
         };
         if self.mitm_filter.filter(&ctx, &req).await {
             tokio::task::spawn(async move {

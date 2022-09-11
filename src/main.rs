@@ -2,21 +2,13 @@
 
 use anyhow::{Ok, Result};
 use clap::Parser;
-use core::{CertificateAuthority, Proxy};
+use core::{handler::RuleHttpHandler, CertificateAuthority, Proxy};
 use hyper_proxy::Intercept;
 use log::*;
 use rustls_pemfile as pemfile;
-use std::fs;
+use std::{fs, sync::Arc};
 
-mod ca;
-mod error;
-mod file;
-
-async fn shutdown_signal() {
-    tokio::signal::ctrl_c()
-        .await
-        .expect("failed to install CTRL+C signal handler");
-}
+use good_mitm::*;
 
 #[derive(Parser)]
 #[clap(name = "Good Man in the Middle", version, about, author)]
@@ -100,6 +92,8 @@ async fn run(opts: &Run) -> Result<()> {
     info!("Http Proxy listen on: http://{}", opts.bind);
 
     let (rules, mitm_filters) = file::load_rules_amd_mitm_filters(&opts.rule)?;
+    let rules = Arc::new(rules);
+    let http_handler = RuleHttpHandler::new(rules);
 
     let proxy = Proxy::builder()
         .ca(ca)
@@ -111,7 +105,7 @@ async fn run(opts: &Run) -> Result<()> {
         )
         .shutdown_signal(shutdown_signal())
         .mitm_filters(mitm_filters)
-        .rules(rules)
+        .handler(http_handler)
         .build();
     proxy.start_proxy().await?;
     Ok(())

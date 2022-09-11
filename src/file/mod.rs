@@ -6,7 +6,7 @@ use single_multi::SingleOrMulti;
 pub mod rule;
 mod single_multi;
 
-pub(crate) fn load_rules_amd_mitm_filters<P: AsRef<Path>>(
+pub fn load_rules_amd_mitm_filters<P: AsRef<Path>>(
     path: P,
 ) -> Result<(Vec<core::rule::Rule>, Vec<String>)> {
     let m = fs::metadata(&path).expect("Not a valid path");
