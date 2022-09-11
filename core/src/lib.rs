@@ -12,7 +12,9 @@ use std::{future::Future, marker::PhantomData, net::SocketAddr, sync::Arc};
 use typed_builder::TypedBuilder;
 
 pub use ca::CertificateAuthority;
+pub use hyper;
 pub use rcgen;
+pub use tokio_rustls;
 
 mod ca;
 mod cache;
