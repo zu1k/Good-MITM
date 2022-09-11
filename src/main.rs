@@ -30,7 +30,7 @@ enum SubCommand {
     /// run proxy serve
     Run(Run),
     /// gen your own ca cert and private key
-    Genca,
+    Genca(Genca),
 }
 
 #[derive(Parser)]
@@ -52,6 +52,12 @@ struct Run {
     proxy: Option<String>,
 }
 
+#[derive(Parser)]
+struct Genca {
+    #[clap(short, long, help = "install cert on your trust zone")]
+    trust: bool,
+}
+
 fn main() {
     env_logger::builder().filter_level(LevelFilter::Info).init();
 
@@ -60,7 +66,12 @@ fn main() {
         SubCommand::Run(opts) => {
             run(&opts).unwrap();
         }
-        SubCommand::Genca => ca::gen_ca(),
+        SubCommand::Genca(opts) => {
+            let cert = ca::gen_ca();
+            if opts.trust {
+                trust_cert::trust_cert(cert);
+            }
+        }
     }
 }
 

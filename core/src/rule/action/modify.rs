@@ -11,12 +11,12 @@ use crate::cache::get_regex;
 #[serde(untagged)]
 pub enum TextModify {
     Set(String),
-    Complect(TextModifyComplext),
+    Complex(TextModifyComplex),
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct TextModifyComplext {
+pub struct TextModifyComplex {
     pub origin: Option<String>,
     pub re: Option<String>,
     pub new: String,
@@ -26,7 +26,7 @@ impl TextModify {
     fn exec_action(&self, text: &str) -> String {
         match self {
             TextModify::Set(new) => new.to_string(),
-            TextModify::Complect(md) => {
+            TextModify::Complex(md) => {
                 if let Some(ref origin) = md.origin {
                     return text.replace(origin, &md.new);
                 }

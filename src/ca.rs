@@ -3,7 +3,7 @@ use log::error;
 use rcgen::*;
 use std::fs;
 
-pub fn gen_ca() {
+pub fn gen_ca() -> Certificate {
     let mut params = CertificateParams::default();
     let mut distinguished_name = DistinguishedName::new();
     distinguished_name.push(DnType::CommonName, "Good-MITM");
@@ -32,4 +32,6 @@ pub fn gen_ca() {
     if let Err(err) = fs::write("ca/private.key", private_key) {
         error!("private key file write failed: {}", err);
     }
+
+    cert
 }

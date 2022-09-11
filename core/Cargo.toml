@@ -10,7 +10,7 @@ license = "MIT"
 [dependencies]
 anyhow = "1.0"
 bytes = { version = "1", features = ["serde"] }
-cached = "0.37"
+cached = "0.39"
 cfg-if = "1"
 cookie = "0.16"
 fancy-regex = "0.10"

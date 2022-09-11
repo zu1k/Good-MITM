@@ -1,6 +1,6 @@
 [package]
 name = "good-mitm"
-version = "0.3.5"
+version = "0.3.6"
 authors = ["zu1k <i@zu1k.com>"]
 edition = "2021"
 description = "Use MITM technology to provide features like rewrite, redirect."
@@ -26,14 +26,16 @@ thiserror = "1"
 log = "0.4"
 env_logger = "0.9"
 serde = { version = "1.0", features = ["derive"] }
-serde_yaml = "0.8"
+serde_yaml = "0.9"
 hyper-proxy = { version = "0.9", default-features = false }
 rustls-pemfile = "1.0"
 tokio = { version = "1", features = ["rt", "signal"] }
 rustls = "0.20"
+trust_cert = { path = "crates/trust_cert" }
 
 
 [workspace]
 members = [
     "core",
+    "crates/trust_cert"
 ]
