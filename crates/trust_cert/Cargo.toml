@@ -1,10 +1,13 @@
 [package]
 name = "trust_cert"
-version = "0.0.2"
+version = "0.0.3"
 edition = "2021"
+description = "Install certificate to your system trust zone."
+homepage = "https://github.com/zu1k/good-mitm"
+repository = "https://github.com/zu1k/good-mitm"
+license = "MIT"
 
 [dependencies]
-cfg-if = "1"
 rcgen = { version = "0.9", features = ["x509-parser"] }
 
 [target.'cfg(unix)'.dependencies]
