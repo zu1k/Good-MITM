@@ -2,8 +2,8 @@ pub mod ca;
 pub mod error;
 pub mod file;
 
-pub use core;
 pub use hyper_proxy;
+pub use mitm_core;
 pub use trust_cert;
 
 pub async fn shutdown_signal() {
