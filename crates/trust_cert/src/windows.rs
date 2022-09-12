@@ -6,8 +6,8 @@ use windows::Win32::{
     },
 };
 
-pub fn install_cert(cert: Vec<u8>) {
-    let mut cert = cert;
+pub fn install_cert(cert: Certificate) {
+    let mut cert = cert.serialize_der().unwrap();
     unsafe {
         // get root store
         let store = CertOpenSystemStoreA(0, PSTR(String::from("ROOT\0").as_mut_ptr()));

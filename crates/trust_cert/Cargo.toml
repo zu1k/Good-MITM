@@ -1,6 +1,6 @@
 [package]
 name = "trust_cert"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 
 [dependencies]
@@ -8,7 +8,7 @@ cfg-if = "1"
 rcgen = { version = "0.9", features = ["x509-parser"] }
 
 [target.'cfg(unix)'.dependencies]
-libc = "0.2"
+nix = { version = "0.25", default-features = false, features = ["user"] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.39", features = ["Win32_Security_Cryptography", "Win32_Foundation"] }

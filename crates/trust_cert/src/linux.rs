@@ -1,61 +1,62 @@
-use std::{env, fs, io::Write, path::Path, process::Command};
+use nix::unistd::getegid;
+use rcgen::Certificate;
+use std::{env, fs, path::Path, process::Command};
 
-pub fn install_cert() {
-    let (system_trust_filename, system_trust_cmd) = {
+pub fn install_cert(cert: Certificate) {
+    if getegid().as_raw() != 0 {
+        println!("Please run with root permission");
+        return;
+    }
+
+    let (system_trust_filename, trust_cmd, trust_cmd_args) = {
         if path_exist("/etc/pki/ca-trust/source/anchors/") {
             (
                 "/etc/pki/ca-trust/source/anchors/{cert-name}.pem",
-                vec!["update-ca-trust", "extract"],
+                "update-ca-trust",
+                vec!["extract"],
             )
         } else if path_exist("/usr/local/share/ca-certificates/") {
             (
                 "/usr/local/share/ca-certificates/{cert-name}.crt",
-                vec!["update-ca-certificates"],
+                "update-ca-certificates",
+                vec![],
             )
         } else if path_exist("/etc/ca-certificates/trust-source/anchors/") {
             (
                 "/etc/ca-certificates/trust-source/anchors/{cert-name}.crt",
-                vec!["trust", "extract-compat"],
+                "trust",
+                vec!["extract-compat"],
             )
         } else if path_exist("/usr/share/pki/trust/anchors") {
             (
                 "/usr/share/pki/trust/anchors/{cert-name}.pem",
-                vec!["update-ca-certificates"],
+                "update-ca-certificates",
+                vec![],
             )
         } else {
-            (
-                "/etc/pki/ca-trust/source/anchors/{cert-name}.pem",
-                vec!["update-ca-trust", "extract"],
-            )
+            ("good-mitm.pem", "", vec![])
         }
     };
 
-    let cert = Path::new(&get_ca_root()).join("mitm-vip-unlocker.pem");
-    let cert = fs::read(cert).unwrap();
+    let cert = cert.serialize_pem().expect("serialize cert to pem format");
+    let system_trust_name = system_trust_filename.replace("{cert-name}", "good-mitm");
+    fs::write(system_trust_name, cert).expect("write cert to system trust ca location");
 
-    let system_trust_name = system_trust_filename.replace("{cert-name}", "mitm-vip-unlocker");
-    let mut cmd = cmd_with_sudo(vec!["tee", &system_trust_name])
-        .spawn()
-        .unwrap();
-    let stdin = cmd.stdin.as_mut().unwrap();
-    stdin.write_all(&cert).unwrap();
-
-    cmd_with_sudo(system_trust_cmd).status().unwrap();
-}
-
-fn cmd_with_sudo(cmd: Vec<&str>) -> Command {
-    let mut cmd = cmd;
-    if unsafe { libc::getegid() } == 0 {
-        let mut command = Command::new(cmd[0]);
-        command.args(&cmd[1..]);
-        return command;
+    if trust_cmd.is_empty() {
+        println!(
+            "Installing to the system store is not yet supported on this Linux 😣 but Firefox and/or Chrome/Chromium will still work.",
+        );
+        let cert_path = Path::new(&get_ca_root()).join("good-mitm.pem");
+        println!(
+            "You can also manually install the root certificate at {}.",
+            cert_path.to_str().unwrap()
+        );
+    } else {
+        Command::new(trust_cmd)
+            .args(trust_cmd_args)
+            .status()
+            .expect("failed to execute trust command");
     }
-
-    let mut sudo_cmd = vec!["--prompt=Sudo password:", "--"];
-    sudo_cmd.append(&mut cmd);
-    let mut command = Command::new("sudo");
-    command.args(&sudo_cmd);
-    command
 }
 
 fn get_ca_root() -> String {
@@ -63,32 +64,33 @@ fn get_ca_root() -> String {
         return v;
     }
 
-    let dir = {
-        if let Ok(v) = env::var("XDG_DATA_HOM") {
+    let mut dir = {
+        if let Ok(v) = env::var("XDG_DATA_HOME") {
             return v;
         }
         if let Ok(v) = env::var("HOME") {
             return Path::new(&v)
                 .join(".local")
                 .join("share")
-                .into_os_string()
-                .into_string()
+                .to_str()
+                .map(|s| s.to_string())
                 .unwrap();
         }
         String::new()
     };
 
-    if dir.is_empty() {
-        String::new()
-    } else {
-        Path::new(&dir)
+    if !dir.is_empty() {
+        dir = Path::new(&dir)
             .join("mitm")
             .into_os_string()
             .into_string()
             .unwrap()
     }
+
+    dir
 }
 
+#[inline]
 fn path_exist(path: &str) -> bool {
     Path::new(path).exists()
 }

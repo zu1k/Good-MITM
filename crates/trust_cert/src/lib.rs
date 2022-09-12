@@ -10,10 +10,9 @@ mod linux;
 pub fn trust_cert(cert: Certificate) {
     cfg_if::cfg_if! {
         if #[cfg(windows)] {
-            windows::install_cert(cert.serialize_der().unwrap());
+            windows::install_cert(cert);
         } else  if #[cfg(target_os = "linux")]  {
-            todo!()
-            // linux::install_cert();
+            linux::install_cert(cert);
         } else {
             panic!("not implemented on this target")
         }
