@@ -2,9 +2,10 @@
 
 use anyhow::{Ok, Result};
 use clap::Parser;
-use core::{handler::RuleHttpHandler, CertificateAuthority, Proxy};
 use hyper_proxy::Intercept;
 use log::*;
+use mitm_core::{CertificateAuthority, Proxy};
+use rule::RuleHttpHandler;
 use rustls_pemfile as pemfile;
 use std::{fs, sync::Arc};
 

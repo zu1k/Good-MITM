@@ -681,6 +681,7 @@ dependencies = [
  "clap",
  "env_logger",
  "good-mitm-core",
+ "good-mitm-rule",
  "hyper-proxy",
  "log",
  "rustls",
@@ -696,13 +697,9 @@ dependencies = [
 name = "good-mitm-core"
 version = "0.1.2"
 dependencies = [
- "anyhow",
  "async-trait",
  "bytes",
- "cached",
  "cfg-if",
- "cookie",
- "fancy-regex",
  "http",
  "hyper",
  "hyper-proxy",
@@ -711,7 +708,6 @@ dependencies = [
  "log",
  "moka",
  "openssl",
- "quick-js",
  "rand",
  "rcgen",
  "rustls",
@@ -723,6 +719,23 @@ dependencies = [
  "tokio-util",
  "typed-builder",
  "wildmatch",
+]
+
+[[package]]
+name = "good-mitm-rule"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "cached",
+ "cookie",
+ "fancy-regex",
+ "good-mitm-core",
+ "http",
+ "hyper",
+ "log",
+ "quick-js",
+ "serde",
 ]
 
 [[package]]

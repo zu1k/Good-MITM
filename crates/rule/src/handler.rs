@@ -1,34 +1,12 @@
+use crate::Rule;
 use async_trait::async_trait;
 use hyper::{header, Body, Request, Response};
 use log::info;
-use std::sync::{Arc, RwLock};
-use wildmatch::WildMatch;
-
-use crate::{
+use mitm_core::{
+    handler::{CustomContextData, HttpHandler},
     mitm::{HttpContext, RequestOrResponse},
-    rule::Rule,
 };
-
-pub trait CustomContextData: Clone + Default + Send + Sync + 'static {}
-
-#[async_trait]
-pub trait HttpHandler<D: CustomContextData>: Clone + Send + Sync + 'static {
-    async fn handle_request(
-        &self,
-        _ctx: &mut HttpContext<D>,
-        req: Request<Body>,
-    ) -> RequestOrResponse {
-        RequestOrResponse::Request(req)
-    }
-
-    async fn handle_response(
-        &self,
-        _ctx: &mut HttpContext<D>,
-        res: Response<Body>,
-    ) -> Response<Body> {
-        res
-    }
-}
+use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct RuleHttpHandler {
@@ -116,30 +94,5 @@ impl HttpHandler<RuleHandlerCtx> for RuleHttpHandler {
             res = rule.do_res(res).await;
         }
         res
-    }
-}
-
-#[derive(Clone, Default)]
-pub struct MitmFilter {
-    filters: Arc<RwLock<Vec<WildMatch>>>,
-}
-
-impl MitmFilter {
-    pub fn new(filters: Vec<String>) -> Self {
-        let filters = filters.iter().map(|f| WildMatch::new(f)).collect();
-        Self {
-            filters: Arc::new(RwLock::new(filters)),
-        }
-    }
-
-    pub async fn filter(&self, _ctx: &HttpContext<RuleHandlerCtx>, req: &Request<Body>) -> bool {
-        let host = req.uri().host().unwrap_or_default();
-        let list = self.filters.read().unwrap();
-        for m in list.iter() {
-            if m.matches(host) {
-                return true;
-            }
-        }
-        false
     }
 }

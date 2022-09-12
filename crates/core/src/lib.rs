@@ -17,12 +17,10 @@ pub use rcgen;
 pub use tokio_rustls;
 
 mod ca;
-mod cache;
 mod error;
 pub mod handler;
 mod http_client;
 pub mod mitm;
-pub mod rule;
 
 #[derive(TypedBuilder)]
 pub struct Proxy<F, H, D>

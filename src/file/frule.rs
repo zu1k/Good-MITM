@@ -8,23 +8,23 @@ pub struct Rule {
     #[serde(alias = "mitm")]
     pub mitm_list: Option<SingleOrMulti<String>>,
     #[serde(alias = "filter")]
-    pub filters: SingleOrMulti<core::rule::Filter>,
+    pub filters: SingleOrMulti<rule::Filter>,
     #[serde(alias = "action")]
-    pub actions: SingleOrMulti<core::rule::Action>,
+    pub actions: SingleOrMulti<rule::Action>,
 }
 
-impl From<Rule> for (core::rule::Rule, Vec<String>) {
+impl From<Rule> for (rule::Rule, Vec<String>) {
     fn from(rule: Rule) -> Self {
-        let filters: Vec<core::rule::Filter> = rule
+        let filters: Vec<rule::Filter> = rule
             .filters
             .into_vec()
             .iter()
-            .map(core::rule::Filter::init)
+            .map(rule::Filter::init)
             .collect();
 
         let mut mitm_filters: Vec<String> = filters
             .iter()
-            .filter_map(core::rule::Filter::mitm_filtter_pattern)
+            .filter_map(rule::Filter::mitm_filtter_pattern)
             .collect();
 
         let mut mitm_list_2 = match rule.mitm_list {
@@ -33,7 +33,7 @@ impl From<Rule> for (core::rule::Rule, Vec<String>) {
         };
         mitm_filters.append(&mut mitm_list_2);
 
-        let rule = core::rule::Rule {
+        let rule = rule::Rule {
             filters,
             actions: rule.actions.into_vec(),
             url: None,

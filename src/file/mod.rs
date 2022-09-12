@@ -3,12 +3,12 @@ use std::{fs, io::BufReader, path::Path};
 
 use single_multi::SingleOrMulti;
 
-pub mod rule;
+pub mod frule;
 mod single_multi;
 
 pub fn load_rules_amd_mitm_filters<P: AsRef<Path>>(
     path: P,
-) -> Result<(Vec<core::rule::Rule>, Vec<String>)> {
+) -> Result<(Vec<rule::Rule>, Vec<String>)> {
     let m = fs::metadata(&path).expect("Not a valid path");
     if m.file_type().is_dir() {
         load_rules_amd_mitm_filters_from_dir(path)
@@ -19,10 +19,10 @@ pub fn load_rules_amd_mitm_filters<P: AsRef<Path>>(
 
 fn load_rules_amd_mitm_filters_from_file<P: AsRef<Path>>(
     path: P,
-) -> Result<(Vec<core::rule::Rule>, Vec<String>)> {
+) -> Result<(Vec<rule::Rule>, Vec<String>)> {
     let file = fs::File::open(path)?;
     let reader = BufReader::new(file);
-    let rules: Vec<rule::Rule> = serde_yaml::from_reader(reader)?;
+    let rules: Vec<frule::Rule> = serde_yaml::from_reader(reader)?;
 
     let (rules, filters) = rules
         .into_iter()
@@ -38,7 +38,7 @@ fn load_rules_amd_mitm_filters_from_file<P: AsRef<Path>>(
 
 fn load_rules_amd_mitm_filters_from_dir<P: AsRef<Path>>(
     path: P,
-) -> Result<(Vec<core::rule::Rule>, Vec<String>)> {
+) -> Result<(Vec<rule::Rule>, Vec<String>)> {
     let dir = fs::read_dir(path).expect("Not a valid dir");
 
     let (rules, filters) = dir

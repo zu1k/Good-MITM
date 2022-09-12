@@ -1,4 +1,4 @@
-use core::rcgen::RcgenError;
+use mitm_core::rcgen::RcgenError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]

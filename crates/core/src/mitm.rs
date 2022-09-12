@@ -39,7 +39,7 @@ where
     pub client: HttpClient,
 
     pub http_handler: Arc<H>,
-    pub mitm_filter: Arc<MitmFilter>,
+    pub mitm_filter: Arc<MitmFilter<D>>,
 
     pub custom_contex_data: PhantomData<D>,
 }

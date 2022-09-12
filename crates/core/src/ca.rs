@@ -1,14 +1,13 @@
 use crate::error::Error;
-use cookie::time::OffsetDateTime;
 use http::uri::Authority;
 use moka::future::Cache;
 use rand::{thread_rng, Rng};
 use rcgen::{
-    DistinguishedName, DnType, ExtendedKeyUsagePurpose, KeyPair, KeyUsagePurpose, RcgenError,
-    SanType,
+    BasicConstraints, Certificate, CertificateParams, DistinguishedName, DnType,
+    ExtendedKeyUsagePurpose, IsCa, KeyPair, KeyUsagePurpose, RcgenError, SanType,
 };
 use std::sync::Arc;
-use time::ext::NumericalDuration;
+use time::{ext::NumericalDuration, OffsetDateTime};
 use tokio_rustls::rustls::{self, ServerConfig};
 
 const CERT_TTL_DAYS: u64 = 365;
@@ -28,6 +27,23 @@ pub struct CertificateAuthority {
 }
 
 impl CertificateAuthority {
+    pub fn gen_ca() -> Result<Certificate, RcgenError> {
+        let mut params = CertificateParams::default();
+        let mut distinguished_name = DistinguishedName::new();
+        distinguished_name.push(DnType::CommonName, "Good-MITM");
+        distinguished_name.push(DnType::OrganizationName, "Good-MITM");
+        distinguished_name.push(DnType::CountryName, "CN");
+        distinguished_name.push(DnType::LocalityName, "CN");
+        params.distinguished_name = distinguished_name;
+        params.key_usages = vec![
+            KeyUsagePurpose::DigitalSignature,
+            KeyUsagePurpose::KeyCertSign,
+            KeyUsagePurpose::CrlSign,
+        ];
+        params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
+        Certificate::from_params(params)
+    }
+
     /// Attempts to create a new certificate authority.
     ///
     /// This will fail if the provided key or certificate is invalid, or if the key does not match

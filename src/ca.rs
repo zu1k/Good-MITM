@@ -1,22 +1,9 @@
-use core::rcgen::*;
 use log::error;
+use mitm_core::rcgen::*;
 use std::fs;
 
 pub fn gen_ca() -> Certificate {
-    let mut params = CertificateParams::default();
-    let mut distinguished_name = DistinguishedName::new();
-    distinguished_name.push(DnType::CommonName, "Good-MITM");
-    distinguished_name.push(DnType::OrganizationName, "Good-MITM");
-    distinguished_name.push(DnType::CountryName, "CN");
-    distinguished_name.push(DnType::LocalityName, "CN");
-    params.distinguished_name = distinguished_name;
-    params.key_usages = vec![
-        KeyUsagePurpose::DigitalSignature,
-        KeyUsagePurpose::KeyCertSign,
-        KeyUsagePurpose::CrlSign,
-    ];
-    params.is_ca = IsCa::Ca(BasicConstraints::Unconstrained);
-    let cert = Certificate::from_params(params).unwrap();
+    let cert = mitm_core::CertificateAuthority::gen_ca().expect("mitm-core generate cert");
     let cert_crt = cert.serialize_pem().unwrap();
 
     fs::create_dir("ca").unwrap();

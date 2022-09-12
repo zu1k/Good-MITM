@@ -1,13 +1,15 @@
-use hyper::{header, header::HeaderValue, Body, Request, Response, StatusCode};
-use log::*;
-use std::vec::Vec;
-
-use crate::{cache, mitm::RequestOrResponse};
 pub use action::Action;
 pub use filter::Filter;
+pub use handler::*;
+use hyper::{header, header::HeaderValue, Body, Request, Response, StatusCode};
+use log::*;
+use mitm_core::mitm::RequestOrResponse;
+use std::vec::Vec;
 
 mod action;
+mod cache;
 mod filter;
+mod handler;
 
 #[derive(Debug, Clone)]
 pub struct Rule {
@@ -85,7 +87,7 @@ impl Rule {
                     action::log_req(&tmp_req).await;
                 }
 
-                Action::Js(code) => {
+                Action::Js(ref code) => {
                     info!("[LogRequest] {}", url);
                     if let Ok(req) = action::js::modify_req(code, tmp_req).await {
                         return RequestOrResponse::Request(req);
@@ -120,7 +122,7 @@ impl Rule {
                     action::log_res(&tmp_res).await;
                 }
 
-                Action::Js(code) => {
+                Action::Js(ref code) => {
                     info!("[LogResponse] {}", url);
                     if let Ok(res) = action::js::modify_res(code, tmp_res).await {
                         return res;

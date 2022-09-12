@@ -8,12 +8,9 @@ repository = "https://github.com/zu1k/good-mitm"
 license = "MIT"
 
 [dependencies]
-anyhow = "1.0"
+async-trait = "0.1"
 bytes = { version = "1", features = ["serde"] }
-cached = "0.39"
 cfg-if = "1"
-cookie = "0.16"
-fancy-regex = "0.10"
 http = "0.2"
 hyper = { version = "0.14", features = ["client", "http1", "server", "stream", "tcp"]  }
 hyper-proxy = { version = "0.9", default-features = false }
@@ -31,13 +28,10 @@ tokio = { version = "1", features = ["rt"] }
 tokio-rustls = { version = "0.23", default-features = false, features = ["tls12"] }
 tokio-util = { version = "0.7", features = ["io"] }
 wildmatch = "2.1"
-quick-js = { version = "0.4", features = ["log"] }
 rustls = { version = "0.20", features = ["dangerous_configuration"] }
-rand = "0.8.5"
-async-trait = "0.1.57"
+rand = "0.8"
 
 [features]
 default = ["h2", "request-native-tls"]
 request-native-tls = ["hyper-tls", "openssl"]
 h2 = ["hyper-rustls/http2"]
-custom_handler = []

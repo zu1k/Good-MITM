@@ -1,0 +1,19 @@
+[package]
+name = "good-mitm-rule"
+version = "0.1.0"
+edition = "2021"
+
+
+[dependencies]
+mitm-core = { path = "../core", package = "good-mitm-core" }
+
+anyhow = "1.0"
+async-trait = "0.1"
+cached = "0.39"
+cookie = "0.16"
+fancy-regex = "0.10"
+http = "0.2"
+hyper = { version = "0.14", features = ["client", "http1", "server", "stream", "tcp"]  }
+log = "0.4"
+quick-js = { version = "0.4", features = ["log"] }
+serde = { version = "1.0", features = ["derive"] }
