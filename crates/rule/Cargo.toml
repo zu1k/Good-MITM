@@ -1,6 +1,6 @@
 [package]
 name = "good-mitm-rule"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Use MITM technology to provide features like rewrite, redirect."
 homepage = "https://github.com/zu1k/good-mitm"
@@ -19,5 +19,9 @@ fancy-regex = "0.10"
 http = "0.2"
 hyper = { version = "0.14", features = ["client", "http1", "server", "stream", "tcp"]  }
 log = "0.4"
-quick-js = { version = "0.4", features = ["log"] }
+quick-js = { version = "0.4", features = ["log"], optional = true }
 serde = { version = "1.0", features = ["derive"] }
+
+[features]
+default = []
+js = ["quick-js"]

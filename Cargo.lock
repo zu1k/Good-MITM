@@ -723,7 +723,7 @@ dependencies = [
 
 [[package]]
 name = "good-mitm-rule"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1933,7 +1933,7 @@ checksum = "f1ee9bd9239c339d714d657fac840c6d2a4f9c45f4f9ec7b0975113458be78db"
 
 [[package]]
 name = "trust_cert"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = [
  "nix",
  "rcgen",

@@ -1,3 +1,4 @@
+#[cfg(feature = "js")]
 pub mod js;
 mod log;
 mod modify;
@@ -15,5 +16,7 @@ pub enum Action {
     ModifyResponse(Modify),
     LogRes,
     LogReq,
+
+    #[cfg(feature = "js")]
     Js(String),
 }
