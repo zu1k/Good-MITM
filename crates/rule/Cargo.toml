@@ -1,6 +1,6 @@
 [package]
 name = "good-mitm-rule"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2021"
 description = "Use MITM technology to provide features like rewrite, redirect."
 homepage = "https://github.com/zu1k/good-mitm"
@@ -9,7 +9,7 @@ license = "MIT"
 
 [dependencies]
 mitm-core = { path = "../core", package = "good-mitm-core" }
-# mitm-core = { version = "0.1.3", package = "good-mitm-core" }
+# mitm-core = { version = "0.2", package = "good-mitm-core" }
 
 anyhow = "1.0"
 async-trait = "0.1"
