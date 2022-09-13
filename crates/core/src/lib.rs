@@ -51,7 +51,7 @@ where
     D: CustomContextData,
 {
     pub async fn start_proxy(self) -> Result<(), Error> {
-        let client = gen_client(self.upstream_proxy);
+        let client = gen_client(self.upstream_proxy)?;
         let ca = Arc::new(self.ca);
 
         let http_handler = Arc::new(self.handler);
@@ -85,6 +85,6 @@ where
             .serve(make_service)
             .with_graceful_shutdown(self.shutdown_signal)
             .await
-            .map_err(|err| err.into())
+            .map_err(Error::from)
     }
 }

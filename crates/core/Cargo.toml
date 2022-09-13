@@ -13,7 +13,7 @@ bytes = { version = "1", features = ["serde"] }
 cfg-if = "1"
 http = "0.2"
 hyper = { version = "0.14", features = ["client", "http1", "server", "stream", "tcp"]  }
-hyper-proxy = { version = "0.9", default-features = false }
+hyper-proxy = { version = "0.9" }
 hyper-rustls = { version = "0.23" }
 hyper-tls = { version = "0.5", optional = true }
 log = "0.4"

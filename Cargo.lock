@@ -878,7 +878,10 @@ dependencies = [
  "headers",
  "http",
  "hyper",
+ "hyper-tls",
+ "native-tls",
  "tokio",
+ "tokio-native-tls",
  "tower-service",
 ]
 

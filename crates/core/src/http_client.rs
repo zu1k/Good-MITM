@@ -1,3 +1,4 @@
+use crate::error::Error;
 use hyper::{client::HttpConnector, Client};
 use hyper_proxy::{Proxy as UpstreamProxy, ProxyConnector};
 use rustls::client::{ServerCertVerified, ServerCertVerifier};
@@ -19,7 +20,7 @@ pub enum HttpClient {
     Https(Client<HttpsConnector<HttpConnector>>),
 }
 
-pub fn gen_client(upstream_proxy: Option<UpstreamProxy>) -> HttpClient {
+pub fn gen_client(upstream_proxy: Option<UpstreamProxy>) -> Result<HttpClient, Error> {
     cfg_if::cfg_if! {
         if #[cfg(feature = "request-native-tls")] {
             let https = {
@@ -27,8 +28,7 @@ pub fn gen_client(upstream_proxy: Option<UpstreamProxy>) -> HttpClient {
                     .danger_accept_invalid_certs(true)
                     .danger_accept_invalid_hostnames(true)
                     .disable_built_in_roots(true)
-                    .build()
-                    .unwrap();
+                    .build()?;
                 let mut http = HttpConnector::new();
                 http.enforce_http(false);
                 HttpsConnector::from((http, tls.into()))
@@ -54,20 +54,20 @@ pub fn gen_client(upstream_proxy: Option<UpstreamProxy>) -> HttpClient {
     }
 
     if let Some(proxy) = upstream_proxy {
-        let connector = ProxyConnector::from_proxy_unsecured(https, proxy);
-        return HttpClient::Proxy(
+        let connector = ProxyConnector::from_proxy(https, proxy)?;
+        return Ok(HttpClient::Proxy(
             Client::builder()
                 .http1_title_case_headers(true)
                 .http1_preserve_header_case(true)
                 .build(connector),
-        );
+        ));
     } else {
-        HttpClient::Https(
+        Ok(HttpClient::Https(
             Client::builder()
                 .http1_title_case_headers(true)
                 .http1_preserve_header_case(true)
                 .build(https),
-        )
+        ))
     }
 }
 
