@@ -1,0 +1,61 @@
+name: Bug report
+description: Create a report to help us improve
+title: "[Bug] "
+body:
+  - type: checkboxes
+    id: ensure
+    attributes:
+      label: Verify steps
+      description: "
+在提交之前，请确认
+Please verify that you've followed these steps
+"
+      options:
+        - label: "
+我已经在 [Issue Tracker](……/) 中找过我要提出的问题
+I have searched on the [issue tracker](……/) for a related issue.
+"
+          required: true
+        - label: "
+我已经仔细看过 [Documentation](https://docs.mitm.plus/) 并无法自行解决问题
+I have read the [documentation](https://docs.mitm.plus/) and was unable to solve the issue.
+"
+          required: true
+  - type: input
+    attributes:
+      label: Version
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: What OS are you seeing the problem on?
+      multiple: true
+      options:
+        - Linux
+        - Windows
+        - macOS
+        - OpenBSD/FreeBSD
+  - type: textarea
+    attributes:
+      render: yaml
+      label: "Rule file"
+      description: "
+在下方附上规则文件，请确保配置文件中没有敏感信息
+Paste the rule file below, please make sure that there is no sensitive information in the configuration file
+"
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      render: shell
+      label: log
+      description: "
+在下方附上运行日志
+Paste the log below.
+"
+  - type: textarea
+    attributes:
+      label: Description
+    validations:
+      required: true
