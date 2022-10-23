@@ -9,6 +9,7 @@ use hyper::{
 use hyper_proxy::Proxy as UpstreamProxy;
 use mitm::MitmProxy;
 use std::{future::Future, marker::PhantomData, net::SocketAddr, sync::Arc};
+use tokio::net::TcpListener;
 use typed_builder::TypedBuilder;
 
 pub use ca::CertificateAuthority;
@@ -63,6 +64,8 @@ where
             let http_handler = Arc::clone(&http_handler);
             let mitm_filter = Arc::clone(&mitm_filter);
 
+            // TODO: conn tls or http?
+
             async move {
                 Ok::<_, Error>(service_fn(move |req| {
                     MitmProxy {
@@ -86,5 +89,29 @@ where
             .with_graceful_shutdown(self.shutdown_signal)
             .await
             .map_err(Error::from)
+    }
+
+    pub async fn start_https_transparent_proxy(self) -> Result<(), Error> {
+        let client = gen_client(self.upstream_proxy)?;
+        let ca = Arc::new(self.ca);
+        let http_handler = Arc::new(self.handler);
+        let mitm_filter = Arc::new(MitmFilter::new(self.mitm_filters));
+
+        let tcp_listener = TcpListener::bind(self.listen_addr).await?;
+
+        loop {
+            let (tcp_stream, _) = tcp_listener.accept().await?;
+            MitmProxy {
+                ca: Arc::clone(&ca),
+                client: client.clone(),
+
+                http_handler: Arc::clone(&http_handler),
+                mitm_filter: Arc::clone(&mitm_filter),
+
+                custom_contex_data: Default::default(),
+            }
+            .serve_tls(tcp_stream)
+            .await;
+        }
     }
 }

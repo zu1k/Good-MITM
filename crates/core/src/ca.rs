@@ -146,11 +146,8 @@ impl CertificateAuthority {
 
 impl ResolvesServerCert for CertificateAuthority {
     fn resolve(&self, client_hello: ClientHello) -> Option<Arc<CertifiedKey>> {
-        if let Some(name) = client_hello.server_name() {
-            Some(self.get_certified_key(name))
-        } else {
-            // This kind of resolver requires SNI
-            None
-        }
+        client_hello
+            .server_name()
+            .map(|name| self.get_certified_key(name))
     }
 }

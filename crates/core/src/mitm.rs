@@ -14,7 +14,10 @@ use hyper::{
 };
 use log::*;
 use std::{marker::PhantomData, sync::Arc};
-use tokio::net::TcpStream;
+use tokio::{
+    io::{AsyncRead, AsyncWrite},
+    net::TcpStream,
+};
 use tokio_rustls::TlsAcceptor;
 
 /// Enum representing either an HTTP request or response.
@@ -136,6 +139,50 @@ where
         Ok(res)
     }
 
+    // async fn process_connect(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    //     let ctx = HttpContext {
+    //         uri: None,
+    //         should_modify_response: false,
+    //         ..Default::default()
+    //     };
+
+    //     if self.mitm_filter.filter(&ctx, &req).await {
+    //         tokio::task::spawn(async move {
+    //             let authority = req
+    //                 .uri()
+    //                 .authority()
+    //                 .expect("URI does not contain authority")
+    //                 .clone();
+
+    //             match hyper::upgrade::on(req).await {
+    //                 Ok(upgraded) => {
+    //                     let server_config = self.ca.clone().gen_server_config();
+
+    //                     let stream = TlsAcceptor::from(server_config)
+    //                         .accept(upgraded)
+    //                         .await
+    //                         .expect("Failed to establish TLS connection with client");
+
+    //                     if let Err(e) = self.serve_tls_stream(stream).await {
+    //                         let e_string = e.to_string();
+    //                         if !e_string.starts_with("error shutting down connection") {
+    //                             debug!("res:: {}", e);
+    //                         }
+    //                     }
+    //                 }
+    //                 Err(e) => debug!("upgrade error for {}: {}", authority, e),
+    //             };
+    //         });
+    //     } else {
+    //         tokio::task::spawn(async move {
+    //             let remote_addr = host_addr(req.uri()).unwrap();
+    //             let upgraded = hyper::upgrade::on(req).await.unwrap();
+    //             tunnel(upgraded, remote_addr).await
+    //         });
+    //     }
+    //     Ok(Response::new(Body::empty()))
+    // }
+
     async fn process_connect(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         let ctx = HttpContext {
             uri: None,
@@ -153,19 +200,7 @@ where
 
                 match hyper::upgrade::on(req).await {
                     Ok(upgraded) => {
-                        let server_config = self.ca.clone().gen_server_config();
-
-                        let stream = TlsAcceptor::from(server_config)
-                            .accept(upgraded)
-                            .await
-                            .expect("Failed to establish TLS connection with client");
-
-                        if let Err(e) = self.serve_https(stream).await {
-                            let e_string = e.to_string();
-                            if !e_string.starts_with("error shutting down connection") {
-                                debug!("res:: {}", e);
-                            }
-                        }
+                        self.serve_tls(upgraded).await;
                     }
                     Err(e) => debug!("upgrade error for {}: {}", authority, e),
                 };
@@ -180,9 +215,25 @@ where
         Ok(Response::new(Body::empty()))
     }
 
-    async fn serve_https(
+    pub async fn serve_tls<IO: AsyncRead + AsyncWrite + Unpin + Send + 'static>(self, stream: IO) {
+        let server_config = self.ca.clone().gen_server_config();
+
+        let stream = TlsAcceptor::from(server_config)
+            .accept(stream)
+            .await
+            .expect("Failed to establish TLS connection with client");
+
+        if let Err(e) = self.serve_tls_stream(stream).await {
+            let e_string = e.to_string();
+            if !e_string.starts_with("error shutting down connection") {
+                debug!("res:: {}", e);
+            }
+        }
+    }
+
+    async fn serve_tls_stream<IO: AsyncRead + AsyncWrite + Unpin + Send + 'static>(
         self,
-        stream: tokio_rustls::server::TlsStream<Upgraded>,
+        stream: tokio_rustls::server::TlsStream<IO>,
     ) -> Result<(), hyper::Error> {
         let service = service_fn(|mut req| {
             if req.version() == http::Version::HTTP_10 || req.version() == http::Version::HTTP_11 {

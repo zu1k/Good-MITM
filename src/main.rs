@@ -7,7 +7,7 @@ use log::*;
 use mitm_core::{CertificateAuthority, Proxy};
 use rule::RuleHttpHandler;
 use rustls_pemfile as pemfile;
-use std::{fs, sync::Arc};
+use std::{fs, net::SocketAddr, sync::Arc};
 
 use good_mitm::*;
 
@@ -97,8 +97,26 @@ async fn run(opts: &Run) -> Result<()> {
     let http_handler = RuleHttpHandler::new(rules);
 
     let proxy = Proxy::builder()
-        .ca(ca)
+        .ca(ca.clone())
         .listen_addr(opts.bind.parse().expect("bind address not valid!"))
+        .upstream_proxy(
+            opts.proxy
+                .clone()
+                .map(|proxy| hyper_proxy::Proxy::new(Intercept::All, proxy.parse().unwrap())),
+        )
+        .shutdown_signal(shutdown_signal())
+        .mitm_filters(mitm_filters.clone())
+        .handler(http_handler.clone())
+        .build();
+
+    tokio::spawn(proxy.start_proxy());
+
+    let mut bind: SocketAddr = opts.bind.parse().expect("bind address not valid!");
+    bind.set_port(bind.port() + 1);
+    info!("Https Transparent Proxy listen on: {}", bind);
+    let proxy2 = Proxy::builder()
+        .ca(ca)
+        .listen_addr(bind)
         .upstream_proxy(
             opts.proxy
                 .clone()
@@ -108,6 +126,11 @@ async fn run(opts: &Run) -> Result<()> {
         .mitm_filters(mitm_filters)
         .handler(http_handler)
         .build();
-    proxy.start_proxy().await?;
+
+    tokio::spawn(proxy2.start_https_transparent_proxy());
+
+    tokio::signal::ctrl_c()
+        .await
+        .expect("failed to listen for event");
     Ok(())
 }
