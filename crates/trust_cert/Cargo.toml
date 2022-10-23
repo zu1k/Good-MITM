@@ -8,10 +8,10 @@ repository = "https://github.com/zu1k/good-mitm"
 license = "MIT"
 
 [dependencies]
-rcgen = { version = "0.9", features = ["x509-parser"] }
+rcgen = { version = "0.10", features = ["x509-parser"] }
 
 [target.'cfg(unix)'.dependencies]
 nix = { version = "0.25", default-features = false, features = ["user"] }
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.39", features = ["Win32_Security_Cryptography", "Win32_Foundation"] }
+windows = { version = "0.42", features = ["Win32_Security_Cryptography", "Win32_Foundation"] }
