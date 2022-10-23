@@ -22,7 +22,7 @@ mitm-core = { path = "crates/core", package = "good-mitm-core" }
 rule = { path = "crates/rule", package = "good-mitm-rule" }
 
 anyhow = "1.0"
-clap = { version = "3.0", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
 thiserror = "1"
 log = "0.4"
 env_logger = "0.9"

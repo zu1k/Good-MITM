@@ -3,7 +3,11 @@ use crate::{
     handler::{CustomContextData, HttpHandler, MitmFilter},
     http_client::HttpClient,
 };
-use http::{header, uri::PathAndQuery, HeaderValue, Uri};
+use http::{
+    header,
+    uri::{PathAndQuery, Scheme},
+    HeaderValue, Uri,
+};
 use hyper::{
     body::HttpBody, server::conn::Http, service::service_fn, upgrade::Upgraded, Body, Method,
     Request, Response,
@@ -61,26 +65,39 @@ where
                 allow_all_cros(&mut res);
                 Ok(res)
             }
-            Err(err) => Err(err),
+            Err(err) => {
+                error!("proxy request failed: {err:?}");
+                Err(err)
+            }
         }
     }
 
-    async fn process_request(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    async fn process_request(self, mut req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
         let mut ctx = HttpContext {
             uri: None,
             should_modify_response: false,
             ..Default::default()
         };
 
-        if req.uri().path().starts_with("/mitm/cert")
-            || req
-                .headers()
-                .get(http::header::HOST)
-                .unwrap()
-                .to_str()
-                .unwrap_or_default()
-                .contains("cert.mitm")
-        {
+        let host = req
+            .headers()
+            .get(http::header::HOST)
+            .map(|h| h.to_str())
+            .unwrap()
+            .map(|h| h.to_owned())
+            .unwrap_or_default();
+
+        let uri = req.uri_mut();
+        if uri.authority().is_none() {
+            *uri = http::uri::Uri::builder()
+                .scheme(uri.scheme().unwrap_or(&Scheme::HTTP).as_str())
+                .authority(host.as_str())
+                .path_and_query(uri.path_and_query().map_or("/", |p| p.as_str()))
+                .build()
+                .unwrap();
+        }
+
+        if req.uri().path().starts_with("/mitm/cert") || host.contains("cert.mitm") {
             return Ok(self.get_cert_res());
         }
 
@@ -91,7 +108,7 @@ where
 
         {
             let header_mut = req.headers_mut();
-            header_mut.remove(http::header::HOST);
+            // header_mut.remove(http::header::HOST);
             header_mut.remove(http::header::ACCEPT_ENCODING);
             header_mut.remove(http::header::CONTENT_LENGTH);
         }
@@ -125,6 +142,7 @@ where
             should_modify_response: false,
             ..Default::default()
         };
+
         if self.mitm_filter.filter(&ctx, &req).await {
             tokio::task::spawn(async move {
                 let authority = req
@@ -135,7 +153,8 @@ where
 
                 match hyper::upgrade::on(req).await {
                     Ok(upgraded) => {
-                        let server_config = self.ca.gen_server_config(&authority).await;
+                        let server_config = self.ca.clone().gen_server_config();
+
                         let stream = TlsAcceptor::from(server_config)
                             .accept(upgraded)
                             .await

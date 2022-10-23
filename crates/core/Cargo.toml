@@ -19,7 +19,7 @@ hyper-tls = { version = "0.5", optional = true }
 log = "0.4"
 moka = { version = "0.9", features = ["future"] }
 openssl = { version = "0.10", features = ["vendored"], optional = true }
-rcgen = { version = "0.9", features = ["x509-parser"] }
+rcgen = { version = "0.10", features = ["x509-parser"] }
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1"
 time = "0.3"
