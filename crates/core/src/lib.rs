@@ -1,11 +1,6 @@
 use error::Error;
 use handler::{CustomContextData, HttpHandler, MitmFilter};
 use http_client::gen_client;
-use hyper::{
-    server::conn::AddrStream,
-    service::{make_service_fn, service_fn},
-    Server,
-};
 use hyper_proxy::Proxy as UpstreamProxy;
 use mitm::MitmProxy;
 use std::{future::Future, marker::PhantomData, net::SocketAddr, sync::Arc};
@@ -54,64 +49,38 @@ where
     pub async fn start_proxy(self) -> Result<(), Error> {
         let client = gen_client(self.upstream_proxy)?;
         let ca = Arc::new(self.ca);
-
         let http_handler = Arc::new(self.handler);
         let mitm_filter = Arc::new(MitmFilter::new(self.mitm_filters));
 
-        let make_service = make_service_fn(move |_conn: &AddrStream| {
+        let tcp_listener = TcpListener::bind(self.listen_addr).await?;
+        loop {
             let client = client.clone();
             let ca = Arc::clone(&ca);
             let http_handler = Arc::clone(&http_handler);
             let mitm_filter = Arc::clone(&mitm_filter);
 
-            // TODO: conn tls or http?
-
-            async move {
-                Ok::<_, Error>(service_fn(move |req| {
-                    MitmProxy {
-                        ca: Arc::clone(&ca),
+            if let Ok((tcp_stream, _)) = tcp_listener.accept().await {
+                tokio::spawn(async move {
+                    let mitm_proxy = MitmProxy {
+                        ca: ca.clone(),
                         client: client.clone(),
-
                         http_handler: Arc::clone(&http_handler),
                         mitm_filter: Arc::clone(&mitm_filter),
-
                         custom_contex_data: Default::default(),
+                    };
+
+                    let mut tls_content_type = [0; 1];
+                    if tcp_stream.peek(&mut tls_content_type).await.is_ok() {
+                        if tls_content_type[0] <= 0x40 {
+                            // ASCII < 'A', assuming tls
+                            mitm_proxy.serve_tls(tcp_stream).await;
+                        } else {
+                            // assuming http
+                            _ = mitm_proxy.serve_stream(tcp_stream).await;
+                        }
                     }
-                    .proxy(req)
-                }))
+                });
             }
-        });
-
-        Server::bind(&self.listen_addr)
-            .http1_preserve_header_case(true)
-            .http1_title_case_headers(true)
-            .serve(make_service)
-            .with_graceful_shutdown(self.shutdown_signal)
-            .await
-            .map_err(Error::from)
-    }
-
-    pub async fn start_https_transparent_proxy(self) -> Result<(), Error> {
-        let client = gen_client(self.upstream_proxy)?;
-        let ca = Arc::new(self.ca);
-        let http_handler = Arc::new(self.handler);
-        let mitm_filter = Arc::new(MitmFilter::new(self.mitm_filters));
-
-        let tcp_listener = TcpListener::bind(self.listen_addr).await?;
-
-        loop {
-            let (tcp_stream, _) = tcp_listener.accept().await?;
-            MitmProxy {
-                ca: Arc::clone(&ca),
-                client: client.clone(),
-
-                http_handler: Arc::clone(&http_handler),
-                mitm_filter: Arc::clone(&mitm_filter),
-
-                custom_contex_data: Default::default(),
-            }
-            .serve_tls(tcp_stream)
-            .await;
         }
     }
 }

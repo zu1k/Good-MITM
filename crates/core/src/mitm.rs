@@ -52,7 +52,10 @@ where
     H: HttpHandler<D>,
     D: CustomContextData,
 {
-    pub(crate) async fn proxy(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    pub(crate) async fn proxy_req(
+        self,
+        req: Request<Body>,
+    ) -> Result<Response<Body>, hyper::Error> {
         let res = if req.method() == Method::CONNECT {
             self.process_connect(req).await
         } else {
@@ -177,7 +180,16 @@ where
 
         match TlsAcceptor::from(server_config).accept(stream).await {
             Ok(stream) => {
-                if let Err(e) = self.serve_stream(stream, Scheme::HTTPS).await {
+                if let Err(e) = Http::new()
+                    .http1_preserve_header_case(true)
+                    .http1_title_case_headers(true)
+                    .serve_connection(
+                        stream,
+                        service_fn(|req| self.clone().process_request(req, Scheme::HTTPS)),
+                    )
+                    .with_upgrades()
+                    .await
+                {
                     let e_string = e.to_string();
                     if !e_string.starts_with("error shutting down connection") {
                         debug!("res:: {}", e);
@@ -190,15 +202,14 @@ where
         }
     }
 
-    async fn serve_stream<S>(self, stream: S, scheme: Scheme) -> Result<(), hyper::Error>
+    pub async fn serve_stream<S>(self, stream: S) -> Result<(), hyper::Error>
     where
         S: AsyncRead + AsyncWrite + Unpin + Send + 'static,
     {
         Http::new()
-            .serve_connection(
-                stream,
-                service_fn(|req| self.clone().process_request(req, scheme.clone())),
-            )
+            .http1_preserve_header_case(true)
+            .http1_title_case_headers(true)
+            .serve_connection(stream, service_fn(|req| self.clone().proxy_req(req)))
             .with_upgrades()
             .await
     }
