@@ -1,10 +1,13 @@
 use crate::error::Error;
-use http::uri::Authority;
-use moka::future::Cache;
+use moka::sync::Cache;
 use rand::{thread_rng, Rng};
 use rcgen::{
     BasicConstraints, Certificate, CertificateParams, DistinguishedName, DnType,
     ExtendedKeyUsagePurpose, IsCa, KeyPair, KeyUsagePurpose, RcgenError, SanType,
+};
+use rustls::{
+    server::{ClientHello, ResolvesServerCert},
+    sign::CertifiedKey,
 };
 use std::sync::Arc;
 use time::{ext::NumericalDuration, OffsetDateTime};
@@ -23,7 +26,7 @@ pub struct CertificateAuthority {
     private_key: rustls::PrivateKey,
     ca_cert: rustls::Certificate,
     ca_cert_string: String,
-    cache: Cache<Authority, Arc<ServerConfig>>,
+    cache: Cache<String, Arc<CertifiedKey>>,
 }
 
 impl CertificateAuthority {
@@ -68,28 +71,23 @@ impl CertificateAuthority {
         Ok(ca)
     }
 
-    pub(crate) async fn gen_server_config(&self, authority: &Authority) -> Arc<ServerConfig> {
-        if let Some(server_cfg) = self.cache.get(authority) {
+    pub(crate) fn get_certified_key(&self, server_name: &str) -> Arc<CertifiedKey> {
+        if let Some(server_cfg) = self.cache.get(server_name) {
             return server_cfg;
         }
 
-        let certs = vec![self.gen_cert(authority)];
-
-        let server_cfg = ServerConfig::builder()
-            .with_safe_defaults()
-            .with_no_client_auth()
-            .with_single_cert(certs, self.private_key.clone())
-            .expect("Failed to set certificate");
-        let server_cfg = Arc::new(server_cfg);
+        let certs = vec![self.gen_cert(server_name)];
+        let key = rustls::sign::any_supported_type(&self.private_key)
+            .expect("parse any supported private key");
+        let certified_key = Arc::new(CertifiedKey::new(certs, key));
 
         self.cache
-            .insert(authority.clone(), Arc::clone(&server_cfg))
-            .await;
+            .insert(server_name.to_string(), certified_key.clone());
 
-        server_cfg
+        certified_key
     }
 
-    fn gen_cert(&self, authority: &Authority) -> rustls::Certificate {
+    fn gen_cert(&self, server_name: &str) -> rustls::Certificate {
         let mut params = rcgen::CertificateParams::default();
 
         params.serial_number = Some(thread_rng().gen::<u64>());
@@ -97,9 +95,9 @@ impl CertificateAuthority {
         params.not_after = OffsetDateTime::now_utc().saturating_add((CERT_TTL_DAYS as i64).days());
         params
             .subject_alt_names
-            .push(SanType::DnsName(authority.host().to_string()));
+            .push(SanType::DnsName(server_name.to_string()));
         let mut distinguished_name = DistinguishedName::new();
-        distinguished_name.push(DnType::CommonName, authority.host());
+        distinguished_name.push(DnType::CommonName, server_name);
         params.distinguished_name = distinguished_name;
 
         params.key_usages = vec![KeyUsagePurpose::DigitalSignature];
@@ -135,5 +133,21 @@ impl CertificateAuthority {
 
     pub fn get_cert(&self) -> String {
         self.ca_cert_string.clone()
+    }
+
+    pub fn gen_server_config(self: Arc<Self>) -> Arc<ServerConfig> {
+        let server_cfg = ServerConfig::builder()
+            .with_safe_defaults()
+            .with_no_client_auth()
+            .with_cert_resolver(self);
+        Arc::new(server_cfg)
+    }
+}
+
+impl ResolvesServerCert for CertificateAuthority {
+    fn resolve(&self, client_hello: ClientHello) -> Option<Arc<CertifiedKey>> {
+        client_hello
+            .server_name()
+            .map(|name| self.get_certified_key(name))
     }
 }

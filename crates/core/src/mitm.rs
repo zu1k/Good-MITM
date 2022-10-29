@@ -3,14 +3,17 @@ use crate::{
     handler::{CustomContextData, HttpHandler, MitmFilter},
     http_client::HttpClient,
 };
-use http::{header, uri::PathAndQuery, HeaderValue, Uri};
+use http::{header, uri::Scheme, HeaderValue, Uri};
 use hyper::{
     body::HttpBody, server::conn::Http, service::service_fn, upgrade::Upgraded, Body, Method,
     Request, Response,
 };
 use log::*;
 use std::{marker::PhantomData, sync::Arc};
-use tokio::net::TcpStream;
+use tokio::{
+    io::{AsyncRead, AsyncWrite},
+    net::TcpStream,
+};
 use tokio_rustls::TlsAcceptor;
 
 /// Enum representing either an HTTP request or response.
@@ -49,11 +52,14 @@ where
     H: HttpHandler<D>,
     D: CustomContextData,
 {
-    pub(crate) async fn proxy(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    pub(crate) async fn proxy_req(
+        self,
+        req: Request<Body>,
+    ) -> Result<Response<Body>, hyper::Error> {
         let res = if req.method() == Method::CONNECT {
             self.process_connect(req).await
         } else {
-            self.process_request(req).await
+            self.process_request(req, Scheme::HTTP).await
         };
 
         match res {
@@ -61,28 +67,46 @@ where
                 allow_all_cros(&mut res);
                 Ok(res)
             }
-            Err(err) => Err(err),
+            Err(err) => {
+                error!("proxy request failed: {err:?}");
+                Err(err)
+            }
         }
     }
 
-    async fn process_request(self, req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    async fn process_request(
+        self,
+        mut req: Request<Body>,
+        scheme: Scheme,
+    ) -> Result<Response<Body>, hyper::Error> {
+        if req.uri().path().starts_with("/mitm/cert") {
+            return Ok(self.get_cert_res());
+        }
+
         let mut ctx = HttpContext {
             uri: None,
             should_modify_response: false,
             ..Default::default()
         };
 
-        if req.uri().path().starts_with("/mitm/cert")
-            || req
-                .headers()
+        // if req.uri().authority().is_none() {
+        if req.version() == http::Version::HTTP_10 || req.version() == http::Version::HTTP_11 {
+            let (mut parts, body) = req.into_parts();
+
+            if let Some(Ok(authority)) = parts
+                .headers
                 .get(http::header::HOST)
-                .unwrap()
-                .to_str()
-                .unwrap_or_default()
-                .contains("cert.mitm")
-        {
-            return Ok(self.get_cert_res());
-        }
+                .map(|host| host.to_str())
+            {
+                let mut uri = parts.uri.into_parts();
+                uri.scheme = Some(scheme.clone());
+                uri.authority = authority.try_into().ok();
+                parts.uri = Uri::from_parts(uri).expect("build uri");
+            }
+
+            req = Request::from_parts(parts, body);
+        };
+        // }
 
         let mut req = match self.http_handler.handle_request(&mut ctx, req).await {
             RequestOrResponse::Request(req) => req,
@@ -125,6 +149,7 @@ where
             should_modify_response: false,
             ..Default::default()
         };
+
         if self.mitm_filter.filter(&ctx, &req).await {
             tokio::task::spawn(async move {
                 let authority = req
@@ -135,18 +160,7 @@ where
 
                 match hyper::upgrade::on(req).await {
                     Ok(upgraded) => {
-                        let server_config = self.ca.gen_server_config(&authority).await;
-                        let stream = TlsAcceptor::from(server_config)
-                            .accept(upgraded)
-                            .await
-                            .expect("Failed to establish TLS connection with client");
-
-                        if let Err(e) = self.serve_https(stream).await {
-                            let e_string = e.to_string();
-                            if !e_string.starts_with("error shutting down connection") {
-                                debug!("res:: {}", e);
-                            }
-                        }
+                        self.serve_tls(upgraded).await;
                     }
                     Err(e) => debug!("upgrade error for {}: {}", authority, e),
                 };
@@ -161,41 +175,41 @@ where
         Ok(Response::new(Body::empty()))
     }
 
-    async fn serve_https(
-        self,
-        stream: tokio_rustls::server::TlsStream<Upgraded>,
-    ) -> Result<(), hyper::Error> {
-        let service = service_fn(|mut req| {
-            if req.version() == http::Version::HTTP_10 || req.version() == http::Version::HTTP_11 {
-                let authority = req
-                    .headers()
-                    .get(http::header::HOST)
-                    .expect("Host is a required header")
-                    .to_str()
-                    .expect("Failed to convert host to str");
+    pub async fn serve_tls<IO: AsyncRead + AsyncWrite + Unpin + Send + 'static>(self, stream: IO) {
+        let server_config = self.ca.clone().gen_server_config();
 
-                let uri = http::uri::Builder::new()
-                    .scheme(http::uri::Scheme::HTTPS)
-                    .authority(authority)
-                    .path_and_query(
-                        req.uri()
-                            .path_and_query()
-                            .unwrap_or(&PathAndQuery::from_static("/"))
-                            .to_owned(),
+        match TlsAcceptor::from(server_config).accept(stream).await {
+            Ok(stream) => {
+                if let Err(e) = Http::new()
+                    .http1_preserve_header_case(true)
+                    .http1_title_case_headers(true)
+                    .serve_connection(
+                        stream,
+                        service_fn(|req| self.clone().process_request(req, Scheme::HTTPS)),
                     )
-                    .build()
-                    .expect("Failed to build URI");
+                    .with_upgrades()
+                    .await
+                {
+                    let e_string = e.to_string();
+                    if !e_string.starts_with("error shutting down connection") {
+                        debug!("res:: {}", e);
+                    }
+                }
+            }
+            Err(err) => {
+                error!("Tls accept failed: {err}")
+            }
+        }
+    }
 
-                let (mut parts, body) = req.into_parts();
-                parts.uri = uri;
-                req = Request::from_parts(parts, body)
-            };
-
-            self.clone().process_request(req)
-        });
-
+    pub async fn serve_stream<S>(self, stream: S) -> Result<(), hyper::Error>
+    where
+        S: AsyncRead + AsyncWrite + Unpin + Send + 'static,
+    {
         Http::new()
-            .serve_connection(stream, service)
+            .http1_preserve_header_case(true)
+            .http1_title_case_headers(true)
+            .serve_connection(stream, service_fn(|req| self.clone().proxy_req(req)))
             .with_upgrades()
             .await
     }

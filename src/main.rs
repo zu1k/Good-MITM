@@ -97,7 +97,7 @@ async fn run(opts: &Run) -> Result<()> {
     let http_handler = RuleHttpHandler::new(rules);
 
     let proxy = Proxy::builder()
-        .ca(ca)
+        .ca(ca.clone())
         .listen_addr(opts.bind.parse().expect("bind address not valid!"))
         .upstream_proxy(
             opts.proxy
@@ -105,9 +105,14 @@ async fn run(opts: &Run) -> Result<()> {
                 .map(|proxy| hyper_proxy::Proxy::new(Intercept::All, proxy.parse().unwrap())),
         )
         .shutdown_signal(shutdown_signal())
-        .mitm_filters(mitm_filters)
-        .handler(http_handler)
+        .mitm_filters(mitm_filters.clone())
+        .handler(http_handler.clone())
         .build();
-    proxy.start_proxy().await?;
+
+    tokio::spawn(proxy.start_proxy());
+
+    tokio::signal::ctrl_c()
+        .await
+        .expect("failed to listen for event");
     Ok(())
 }
