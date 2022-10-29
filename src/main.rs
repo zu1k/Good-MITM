@@ -60,8 +60,10 @@ fn main() {
             run(&opts).unwrap();
         }
         SubCommand::Genca(opts) => {
+            #[allow(unused_variables)]
             let cert = ca::gen_ca();
             if opts.trust {
+                #[cfg(feature = "trust-cert")]
                 trust_cert::trust_cert(cert);
             }
         }

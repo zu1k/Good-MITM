@@ -13,7 +13,7 @@ mitm-core = { path = "../core", package = "good-mitm-core" }
 
 anyhow = "1.0"
 async-trait = "0.1"
-cached = "0.39"
+cached = "0.40"
 cookie = "0.16"
 fancy-regex = "0.10"
 http = "0.2"

@@ -1,12 +1,12 @@
 use anyhow::Result;
-use std::{fs, io::BufReader, path::Path};
-
+use log::error;
 use single_multi::SingleOrMulti;
+use std::{fs, io::BufReader, path::Path};
 
 pub mod frule;
 mod single_multi;
 
-pub fn load_rules_amd_mitm_filters<P: AsRef<Path>>(
+pub fn load_rules_amd_mitm_filters<P: AsRef<Path> + Clone>(
     path: P,
 ) -> Result<(Vec<rule::Rule>, Vec<String>)> {
     let m = fs::metadata(&path).expect("Not a valid path");
@@ -17,12 +17,21 @@ pub fn load_rules_amd_mitm_filters<P: AsRef<Path>>(
     }
 }
 
-fn load_rules_amd_mitm_filters_from_file<P: AsRef<Path>>(
+fn load_rules_amd_mitm_filters_from_file<P: AsRef<Path> + Clone>(
     path: P,
 ) -> Result<(Vec<rule::Rule>, Vec<String>)> {
-    let file = fs::File::open(path)?;
+    let file = fs::File::open(path.clone())?;
     let reader = BufReader::new(file);
-    let rules: Vec<frule::Rule> = serde_yaml::from_reader(reader)?;
+    let rules: Vec<frule::Rule> = match serde_yaml::from_reader(reader) {
+        Ok(rules) => rules,
+        Err(err) => {
+            error!(
+                "load rule ({}) failed: {err}",
+                path.as_ref().to_str().unwrap()
+            );
+            return Err(err.into());
+        }
+    };
 
     let (rules, filters) = rules
         .into_iter()

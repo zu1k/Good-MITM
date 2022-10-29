@@ -19,7 +19,7 @@ codegen-units = 1
 
 [dependencies]
 mitm-core = { path = "crates/core", package = "good-mitm-core" }
-rule = { path = "crates/rule", package = "good-mitm-rule" }
+rule = { path = "crates/rule", package = "good-mitm-rule", features = ["js"] }
 
 anyhow = "1.0"
 clap = { version = "4", features = ["derive"] }
@@ -30,10 +30,13 @@ serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 hyper-proxy = { version = "0.9", default-features = false }
 rustls-pemfile = "1.0"
-tokio = { version = "1", features = ["rt", "signal"] }
+tokio = { version = "1", features = ["rt-multi-thread", "signal"] }
 rustls = "0.20"
-trust_cert = { path = "crates/trust_cert" }
+trust_cert = { path = "crates/trust_cert", optional = true }
 
+[features]
+default = []
+trust-cert = ["dep:trust_cert"]
 
 [workspace]
 members = [

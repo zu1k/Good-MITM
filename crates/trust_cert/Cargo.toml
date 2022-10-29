@@ -1,6 +1,6 @@
 [package]
 name = "trust_cert"
-version = "0.0.4"
+version = "0.0.5"
 edition = "2021"
 description = "Install certificate to your system trust zone."
 homepage = "https://github.com/zu1k/good-mitm"
@@ -14,4 +14,4 @@ rcgen = { version = "0.10", features = ["x509-parser"] }
 nix = { version = "0.25", default-features = false, features = ["user"] }
 
 [target.'cfg(windows)'.dependencies]
-windows = { version = "0.42", features = ["Win32_Security_Cryptography", "Win32_Foundation"] }
+windows = { version = "0.43", features = ["Win32_Security_Cryptography", "Win32_Foundation"] }
