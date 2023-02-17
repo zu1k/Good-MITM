@@ -25,7 +25,7 @@ anyhow = "1.0"
 clap = { version = "4", features = ["derive"] }
 thiserror = "1"
 log = "0.4"
-env_logger = "0.9"
+env_logger = "0.10"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 hyper-proxy = { version = "0.9", default-features = false }

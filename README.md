@@ -6,13 +6,13 @@
 [![GitHub issues](https://img.shields.io/github/issues/zu1k/good-mitm)](https://github.com/zu1k/good-mitm/issues)
 [![Build](https://github.com/zu1k/good-mitm/actions/workflows/build-test.yml/badge.svg)](https://github.com/zu1k/good-mitm/actions/workflows/build-test.yml)
 [![GitHub license](https://img.shields.io/github/license/zu1k/good-mitm)](https://github.com/zu1k/good-mitm/blob/master/LICENSE)
-[![Docs](https://img.shields.io/badge/docs-read-blue.svg?style=flat)](https://docs.mitm.plus)
+[![Docs](https://img.shields.io/badge/docs-read-blue.svg?style=flat)](https://good-mitm.zu1k.com/)
 
 利用`MITM`技术实现请求和返回的`重写`、`重定向`、`阻断`等操作
 
 ## 使用方法
 
-这里仅介绍最基本的使用流程，具体使用方法和规则请查看[文档](https://docs.mitm.plus)
+这里仅介绍最基本的使用流程，具体使用方法和规则请查看[文档](https://good-mitm.zu1k.com/)
 
 ### 证书准备
 
@@ -44,6 +44,4 @@ good-mitm.exe run -r rules
 
 ## License
 
-**Good-MITM** © [zu1k](https://github.com/zu1k), Released under the [MIT](./LICENSE) License.<br>
-
-> Blog [zu1k.com](https://zu1k.com) · GitHub [@zu1k](https://github.com/zu1k) · Twitter [@zu1k_lv](https://twitter.com/zu1k_lv) · Telegram Channel [@peekfun](https://t.me/peekfun)
+**Good-MITM** © [zu1k](https://github.com/zu1k), Released under the [MIT](./LICENSE) License.

@@ -1,0 +1,100 @@
+- name: "yxbj"
+  mitm: "config.app.yinxiang.com"
+  filters:
+    url-regex: 'https:\/\/config\.app\.yinxiang\.com\/configfiles\/json\/com\.yinxiang\.ios\/default\/YXFrontEnd\.mobile\.common'
+  actions:
+    js: |
+      function process() {
+        console.log("yxbj ====================================================");
+
+        if (data.request != undefined) {
+          let req = data.request;
+          return req;
+        }
+
+        console.log(data);
+        if (data.response != undefined) {
+          let res = data.response;
+          if (res.body != undefined) {
+            var body = JSON.parse(res.body);
+            console.log(body);
+
+            body['showAdsInPricingTier'] = "false";
+            body['is_pen_entrance_hidden'] = "true";
+            body['is_pen_purchase_button_hidden'] = "true";
+
+            body['pen_purchase_url'] = "";
+            body['pen_upgrade_enabled'] = "false";
+            body['space_beta_enabled'] = "true";
+
+            body['discovery_feed_visible'] = "false";
+            body['discovery_homepage_visible'] = "false";
+
+            body['personal_center_ad_info'] = "";
+            body['is_scan_pen_entrance_hidden'] = "true";
+            body['is_scan_pen_purchase_button_hidden'] = "true";
+            body['scan_pen_purchase_url'] = "";
+
+            body['home_promotion_for_eight_years'] = "{}";
+            body['home_scan_pen_cover_icon'] = "{}";
+            body['home_ever_pen_cover_icon'] = "{}";
+
+            body['ever_pen_guide_background'] = "{}";
+            body['ever_pen_guide_purchase_icon'] = "{}";
+            body['scan_pen_guide_purchase_icon'] = "{}";
+
+            body['everscan_android_purchase_url'] = "";
+            body['everpen_feedback_show'] = "false";
+            body['everhub_entrance_icon_show'] = "false";
+            body['everhub_entrance_icon_sourceurl'] = "{}";
+            body['everhub_pop_show'] = "false";
+            body['everhub_pop_sourceurl'] = "{}";
+            body['everhub_pop_count'] = "0";
+            body['home_recommended_banner_on_off_enable'] = "true";
+
+            body['is_everrec_entrance_hidden'] = "true";
+            body['everrec_upgrade_enabled'] = "false";
+            body['is_everrec_purchase_button_hidden'] = "true";
+
+            body['home_page_new_user_banner_freetrial_configuration'] = "{}";
+            body['home_everrec_pen_cover_icon'] = "{}";
+
+            body['everrec_pen_guide_purchase_icon'] = "{}";
+            body['personal_center_ad_info_plus_deeplink'] = "{}";
+            body['mine_wallet_promotion_enable'] = "false";
+            body['personal_center_ad_banner_list'] = "{}";
+            body['home_top_earphone_entrance'] = "{}";
+            body['home_top_course_entrance'] = "{}";
+            body['unpaid_order_entrance_enable'] = "false";
+
+            body['is_everbuds_entrance_hidden'] = "true";
+            body['is_everbuds_purchase_button_hidden'] = "true";
+            body['scan_pods_guide_purchase_icon'] = "{}";
+            body['home_everbuds_cover_icon'] = "{}";
+            body['is_everrec_pro_purchase_button_hidden'] = "true";
+            body['everrec_pen_pro_guide_purchase_icon'] = "";
+            body['everrec_pro_purchase_url'] = "";
+            body['is_everrec_pro_user_guide_button_hidden'] = "true";
+
+            body['show_evertime_feature_svip'] = "true";
+            body['show_evertime_feature_pro'] = "true";
+            body['show_verse_feature_svip'] = "true";
+            body['show_verse_feature_pro'] = "true";
+            body['ten_year_active'] = "false";
+            body['personal_center_ad_banner_newlist'] = "{\"banners\":[]}";
+
+            body['svip_show_scannable_feature'] = "true";
+            body['show_lightnote_feature'] = "true";
+            body['show_evermind_feature'] = "true";
+            body['show_kollector_feature'] = "true";
+            body['show_more_feature'] = "true";
+
+
+            body['realtime_transcription_duration'] = "9999";
+
+            res.body = JSON.stringify(body);
+          }
+          return res;
+        }
+      }
+      process()

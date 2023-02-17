@@ -17,8 +17,8 @@ I have searched on the [issue tracker](……/) for a related issue.
 "
           required: true
         - label: "
-我已经仔细看过 [Documentation](https://docs.mitm.plus/) 并无法自行解决问题
-I have read the [documentation](https://docs.mitm.plus/) and was unable to solve the issue.
+我已经仔细看过 [Documentation](https://good-mitm.zu1k.com/) 并无法自行解决问题
+I have read the [documentation](https://good-mitm.zu1k.com/) and was unable to solve the issue.
 "
           required: true
   - type: input

@@ -3,3 +3,5 @@
 /ca
 .vscode
 .idea
+
+/crates/adblocker
