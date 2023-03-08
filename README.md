@@ -88,8 +88,8 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
 一条合格的规则需要包含以下内容:
 
 - `规则名`：用来区分不同的规则，便与维护
-- [`筛选器`](rule/filter.md)：用于从众多`请求`和`返回`中筛选出需要处理的内容
-- [`动作`](rule/action.md)：用于执行想要的行为，包括`重定向`、`阻断`、`修改`等
+- [`筛选器`](#filter)：用于从众多`请求`和`返回`中筛选出需要处理的内容
+- [`动作`](#action)：用于执行想要的行为，包括`重定向`、`阻断`、`修改`等
 - 必要时指定需要MITM的域名
 
 ```yaml
@@ -107,6 +107,7 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
 - 高效：尽量使用高效的方法，比如使用域名后缀和域名前缀来替换域名正则表达式
 
 ### Filter 筛选器
+<span id="filter"></span>
 
 `Filter`用来筛选需要处理的请求和返回
 
@@ -215,8 +216,8 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
 ```
 
 具有相同动作的多个规则可聚合为一个规则以便于维护
-
 ### Action 动作
+<span id="action"></span>
 
 `Action` 用来对请求或者返回进行操作
 
@@ -256,11 +257,11 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
 
 ##### ModifyRequest 修改请求
 
-`modify-request`用来修改请求，具体修改规则见 [修改器](rule/modify.md)
+`modify-request`用来修改请求，具体修改规则见 [修改器](#modify)
 
 ##### ModifyResponse 修改返回
 
-`modify-response`用来修改返回，具体修改规则见 [修改器](rule/modify.md)
+`modify-response`用来修改返回，具体修改规则见 [修改器](#modify)
 
 ##### Log 记录日志
 
@@ -280,6 +281,7 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
 ```
 
 ### 修改器
+<span id="modify"></span>
 
 修改器用来执行修改操作，包括修改请求和修改返回
 
@@ -386,10 +388,6 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
 ##### Body修改
 
 见 `TextModify` 部分
-
-## 感谢列表
-
-- [**hudsucker**](https://github.com/omjadas/hudsucker): a Rust crate providing MITM features
 
 ## License
 
