@@ -106,8 +106,8 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
 - 简单：使用简单的方法来处理，便与维护
 - 高效：尽量使用高效的方法，比如使用域名后缀和域名前缀来替换域名正则表达式
 
-### Filter 筛选器
-<span id="filter"></span>
+
+### Filter 筛选器 <span id="filter"></span>
 
 `Filter`用来筛选需要处理的请求和返回
 
@@ -216,8 +216,8 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
 ```
 
 具有相同动作的多个规则可聚合为一个规则以便于维护
-### Action 动作
-<span id="action"></span>
+
+### Action 动作 <span id="action"></span>
 
 `Action` 用来对请求或者返回进行操作
 
@@ -280,8 +280,7 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
     - redirect: "$1$4"
 ```
 
-### 修改器
-<span id="modify"></span>
+### 修改器 <span id="modify"></span>
 
 修改器用来执行修改操作，包括修改请求和修改返回
 
