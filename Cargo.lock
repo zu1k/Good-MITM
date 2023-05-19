@@ -762,7 +762,7 @@ dependencies = [
 
 [[package]]
 name = "good-mitm-core"
-version = "0.3.0"
+version = "0.4.1"
 dependencies = [
  "async-trait",
  "bytes",
