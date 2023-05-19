@@ -14,21 +14,21 @@ cfg-if = "1"
 http = "0.2"
 hyper = { version = "0.14", features = ["http1", "http2", "server", "stream", "tcp", "runtime"]  }
 hyper-proxy = { version = "0.9" }
-hyper-rustls = { version = "0.23" }
+hyper-rustls = { version = "0.24" }
 hyper-tls = { version = "0.5", optional = true }
 log = "0.4"
-moka = { version = "0.9", features = ["future"] }
+moka = { version = "0.11", features = ["future"] }
 openssl = { version = "0.10", features = ["vendored"], optional = true }
 rcgen = { version = "0.10", features = ["x509-parser"] }
 serde = { version = "1.0", features = ["derive"] }
 thiserror = "1"
 time = "0.3"
-typed-builder = "0.10"
+typed-builder = "0.14"
 tokio = { version = "1", features = ["rt"] }
-tokio-rustls = { version = "0.23", default-features = false, features = ["tls12"] }
+tokio-rustls = { version = "0.24", default-features = false, features = ["tls12"] }
 tokio-util = { version = "0.7", features = ["io"] }
 wildmatch = "2.1"
-rustls = { version = "0.20", features = ["dangerous_configuration"] }
+rustls = { version = "0.21", features = ["dangerous_configuration"] }
 rand = "0.8"
 
 [features]
