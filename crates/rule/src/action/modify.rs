@@ -180,20 +180,17 @@ impl Modify {
 
                 let mut cookies_jar = CookieJar::new();
                 if let Some(cookies) = res.headers().get(header::COOKIE) {
-                    let cookies = cookies.to_str().unwrap().to_string();
-                    let cookies: Vec<String> = cookies.split("; ").map(String::from).collect();
-                    for c in cookies {
-                        if let Ok(c) = Cookie::parse(c) {
-                            cookies_jar.add(c);
-                        }
-                    }
+                    let cookies = String::from_utf8_lossy(cookies.as_bytes()).to_string();
+                    Cookie::split_parse(cookies)
+                        .filter_map(Result::ok)
+                        .for_each(|cookie| cookies_jar.add(cookie));
                 }
 
                 let mut set_cookies_jar = CookieJar::new();
                 let set_cookies = res.headers().get_all(header::SET_COOKIE);
                 for sc in set_cookies {
-                    let sc = sc.to_str().unwrap().to_string();
-                    if let Ok(c) = Cookie::parse(sc) {
+                    if let Ok(c) = Cookie::parse(String::from_utf8_lossy(sc.as_bytes()).to_string())
+                    {
                         set_cookies_jar.add(c);
                     }
                 }
