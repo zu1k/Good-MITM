@@ -8,64 +8,64 @@
 [![GitHub license](https://img.shields.io/github/license/zu1k/good-mitm)](https://github.com/zu1k/good-mitm/blob/master/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-read-blue.svg?style=flat)](https://good-mitm.zu1k.com/)
 
-#### [English](github.com/zu1k/good-mitm/blob/master/README_en.md)
+#### [中文版](github.com/zu1k/good-mitm/blob/master/README_zh.md)
 
-利用`MITM`技术实现请求和返回的`重写`、`重定向`、`阻断`等操作
+Utilize the `MITM` technique to perform operations such as `rewrite`, `redirect`, `reject` requests and responses.
 
-## 功能
+## Features
 
-- 基于 TLS ClientHello 的自动证书签署
-- 支持选择性 MITM
-- 基于 YAML 格式的规则描述语言：重写/阻断/重定向
-  - 灵活的规则匹配器
-    - 域名前缀/后缀/全匹配
-    - 正则匹配
-    - 多筛选器规则
-  - 灵活的文本内容改写
-    - 抹除/替换
-    - 正则替换
-  - 灵活的字典类型内容改写
-    - HTTP Header 改写
-    - Cookie 改写
-  - 支持单条规则多个行为
-- 支持 JavaScript 脚本规则 (编程介入)
-- 支持透明代理
-- 透明代理 HTTPS 和 HTTP 复用单端口
-- 支持自动安装 CA 证书到系统信任区
+- Signing certificate automatically based on TLS ClientHello SNI extension
+- Support selective MITM for specific domains
+- Rule description language based on YAML format: rewrite, reject, redirect
+  - Flexible rule matching capabilities
+    - Domain name prefix/suffix/exact match
+    - Regular expression matching
+    - Multiple filter rules
+  - Flexible text content rewriting
+    - Erase/replace
+    - Regular expression substitution
+  - Flexible dictionary-based content rewriting
+    - HTTP header rewriting
+    - Cookie rewriting
+  - Support for multiple actions per rule
+- JavaScript script rules support (programmatic intervention)
+- Transparent proxy support
+- Support HTTPS and HTTP multiplexing on a single port
+- Install CA certificate to the system trust zone
 
-## 使用方法
+## Usage
 
-### 证书准备
+### Certificate Preparation
 
-由于`MITM`技术的需要，需要你生成并信任自己的根证书
+Due to the requirement of the `MITM` technique, you need to generate and trust your own root certificate.
 
-#### 生成根证书
+#### Generate Root Certificate
 
-出于安全考虑，请不要随意信任任何陌生人提供的根证书，你需要自己生成属于自己的根证书和私钥
+For security reasons, please do not blindly trust any root certificate provided by strangers. You need to generate your own root certificate and private key.
 
-经验丰富的用户可以自行使用OpenSSL进行相关操作，考虑到没有相关经验的用户，可以使用以下命令直接生成相关内容，生成的证书和私钥将存储在`ca`目录下
+Experienced users can use OpenSSL to perform the necessary operations. However, for users without experience in this area, you can use the following command to generate the required content. The generated certificate and private key will be stored in the `ca` directory.
 
 ```shell
 good-mitm.exe genca
 ```
 
-在浏览器使用了Good-MITM提供的代理后，通过访问 [http://cert.mitm.plus](http://cert.mitm.plus) 可以直接下载证书，这在给其他设备提供服务时非常有用
+After using the proxy provided by Good-MITM in your browser, you can directly download the certificate by visiting [http://cert.mitm.plus](http://cert.mitm.plus). This is particularly useful when providing services to other devices.
 
-#### 信任证书
+#### Trusting the Certificate
 
-你可以将根证书添加到操作系统或者浏览器的信任区中，根据你的需要自行选择
+You can add the root certificate to the trust zone of your operating system or browser, depending on your needs.
 
-### 代理
+### Proxy
 
-启动Good-MITM，指定使用的规则文件或目录
+Start Good-MITM and specify the rule file or directory to use.
 
 ```shell
 good-mitm.exe run -r rules
 ```
 
-在浏览器或操作系统中使用Good-MITM提供的http代理：`http://127.0.0.1:34567`
+Use the HTTP proxy provided by Good-MITM in your browser or operating system: `http://127.0.0.1:34567`.
 
-#### 透明代理
+#### Transparent Proxy
 
 See https://docs.mitmproxy.org/stable/howto-transparent/ for docs.
 
@@ -83,39 +83,38 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 80 -j
 sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -j REDIRECT --to-port 34567
 ```
 
-## Rule 规则
+## Rule
 
-`Rule`用来操控 Good-MITM
+`Rule` is used to manipulate Good-MITM.
 
-一条合格的规则需要包含以下内容:
+A valid rule should include the following components:
 
-- `规则名`：用来区分不同的规则，便与维护
-- [`筛选器`](#filter)：用于从众多`请求`和`返回`中筛选出需要处理的内容
-- [`动作`](#action)：用于执行想要的行为，包括`重定向`、`阻断`、`修改`等
-- 必要时指定需要MITM的域名
+- `Name`：Used to differentiate different rules for easier maintenance.
+- [`Filter`](#filter)：Used to select the content to be processed from a set of `requests` and `responses`.
+- [`Action`](#action)：Used to perform desired actions, including `redirect`, `reject`, `modification`, etc.
+- Optionally, specify the domain name that requires MITM.
 
 ```yaml
-- name: "屏蔽Yutube追踪"
+- name: "Block YouTube tracking"
   mitm: "*.youtube.com"
   filter:
     url-regex: '^https?:\/\/(www|s)\.youtube\.com\/(pagead|ptracking)'
   action: reject
 ```
 
-同时一条合格的规则需要符合以下要求:
+Additionally, a valid rule should meet the following requirements:
 
-- 专注：一条规则只用来做一件事
-- 简单：使用简单的方法来处理，便与维护
-- 高效：尽量使用高效的方法，比如使用域名后缀和域名前缀来替换域名正则表达式
+- Focus: Each rule should be designed to perform a single task.
+- Simplicity: Use straightforward methods for processing to ensure easy maintenance.
+- Efficiency: Use efficient methods whenever possible, such as using domain suffixes and prefixes instead of complex regular expressions for domain matching.
 
+### Filter <span id="filter"></span>
 
-### Filter 筛选器 <span id="filter"></span>
+`Filter`is used to select the requests and responses that need to be processed.
 
-`Filter`用来筛选需要处理的请求和返回
+#### Available Options
 
-#### 候选项
-
-`Filter`目前包含以下类型：
+Currently, `Filter` includes the following types:
 
 - All
 - Domain(String)
@@ -124,14 +123,14 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
 - DomainSuffix(String)
 - UrlRegex(fancy_regex::Regex)
 
-> **注意**  
-> 当前版本中，`domain`相关类型匹配的是`host`，通常情况下不会影响结果  
-> 在网站使用非常规端口时，规则需要注明端口  
-> 后续版本将会对此行为进行优化  
+> **Note**  
+> In the current version, the `domain` related types match the `host` field, which usually does not affect the results.
+> If a website is using a non-standard port, the rule needs to specify the port.
+> This behavior will be optimized in future versions.
 
-##### All 全部
+##### All
 
-指定筛选器为`all`时将会命中全部请求和返回，通常用来执行日志记录行为
+When specifying the filter as `all`, it will match all requests and responses. This is typically used for performing logging actions.
 
 ```yaml
 - name: "log"
@@ -141,9 +140,9 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
     - log-res
 ```
 
-##### Domain 域名
+##### Domain
 
-`domain`对域名进行全量匹配
+`domain` performs a full match against the domain name.
 
 ```yaml
 - name: "redirect"
@@ -153,9 +152,9 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
     redirect: "https://zu1k.com/"
 ```
 
-##### DomainKeyword 域名关键词
+##### DomainKeyword
 
-`domain-keyword`对域名进行关键词匹配
+`domain-keyword` performs a keyword match against the domain name.
 
 ```yaml
 - name: "reject CSDN"
@@ -164,9 +163,9 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
   action: reject
 ```
 
-##### DomainPrefix 域名前缀
+##### DomainPrefix
 
-`domain-prefix`对域名进行前缀匹配
+`domain-prefix` performs a prefix match against the domain name.
 
 ```yaml
 - name: "ad prefix"
@@ -175,9 +174,9 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
   action: reject
 ```
 
-##### DomainSuffix 域名后缀
+##### DomainSuffix
 
-`domain-suffix`对域名进行后缀匹配
+`domain-suffix` performs a suffix match against the domain name.
 
 
 ```yaml
@@ -188,21 +187,21 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
     redirect: "https://google.com"
 ```
 
-##### UrlRegex Url正则
+##### UrlRegex Url
 
-`url-regex`对整个url进行正则匹配
+`url-regex` performs a regular expression match against the entire URL.
 
 ```yaml
-- name: "youtube追踪"
+- name: "youtube tracking"
   mitm: "*.youtube.com"
   filter:
     url-regex: '^https?:\/\/(www|s)\.youtube\.com\/(pagead|ptracking)'
   action: reject
 ```
 
-#### 多个筛选器
+#### Multiple Filter
 
-`filters`字段支持单个筛选器和多个筛选器，多个筛选器之间的关系为`或`
+The `filters` field supports both single filters and multiple filters, with the relationship between multiple filters being `OR`.
 
 ```yaml
 - name: "youtube-2"
@@ -217,15 +216,15 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
   action: reject
 ```
 
-具有相同动作的多个规则可聚合为一个规则以便于维护
+Multiple rules with the same action can be aggregated into a single rule for easier maintenance.
 
-### Action 动作 <span id="action"></span>
+### Action <span id="action"></span>
 
-`Action` 用来对请求或者返回进行操作
+`Action` is used to perform operations on requests or responses.
 
-#### 候选项
+#### Available Options
 
-`Action`目前包含以下选项：
+Currently, `Action` includes the following options:
 
 - Reject
 - Redirect(String)
@@ -234,9 +233,9 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
 - LogRes
 - LogReq
 
-##### Reject 拒绝
+##### Reject
 
-`reject`类型直接返回`502`，用来拒绝某些请求，可以用来拒绝追踪和广告
+The `reject` type directly returns `502` status code, which is used to reject certain requests. It can be used to block tracking and ads.
 
 ```yaml
 - name: "reject CSDN"
@@ -245,9 +244,9 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
   action: reject
 ```
 
-##### Redirect 重定向
+##### Redirect
 
-`redirect`类型直接返回`302`重定向
+The `redirect` type directly returns `302` status code for redirection.
 
 ```yaml
 - name: "youtube-1"
@@ -257,21 +256,21 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
     redirect: "$1$4"
 ```
 
-##### ModifyRequest 修改请求
+##### ModifyRequest
 
-`modify-request`用来修改请求，具体修改规则见 [修改器](#modify)
+`modify-request` is used to modify the request. For specific modification rules, refer to the [Modify](#modify) section.
 
-##### ModifyResponse 修改返回
+##### ModifyResponse
 
-`modify-response`用来修改返回，具体修改规则见 [修改器](#modify)
+`modify-response` is used to modify the response. For specific modification rules, refer to the [Modify](#modify) section.
 
-##### Log 记录日志
+##### Log
 
-`log-req` 用来记录请求，`log-res` 用来记录返回
+`log-req` is used to log the request, and `log-res` is used to log the response.
 
-#### 多个动作
+#### Multiple Action
 
-`actions`字段支持单个动作和多个动作，当需要执行多个动作时，应使用数组
+The `actions` field supports both single actions and multiple actions. When multiple actions need to be performed, an array should be used.
 
 ```yaml
 - name: "youtube-1"
@@ -282,28 +281,28 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
     - redirect: "$1$4"
 ```
 
-### 修改器 <span id="modify"></span>
+### Modify <span id="modify"></span>
 
-修改器用来执行修改操作，包括修改请求和修改返回
+Modify are used to perform modification operations, including modifying requests and modifying responses.
 
-#### 候选项
+#### Available Options
 
-根据需要修改的内容的位置，修改器分为以下几类：
+Based on the location of the content to be modified, the modifiers can be categorized as follows:
 
 - Header(MapModify)
 - Cookie(MapModify)
 - Body(TextModify)
 
-##### TextModify 文本修改器
+##### TextModify
 
-`TextModify` 主要对文本就行修改，目前支持两种方式：
+`TextModify` is mainly used for modifying text. Currently, it supports two methods:
 
-- 直接设置文本内容
-- 普通替换或者正则替换
+- Setting the text content directly.
+- Simple replacement or regular expression replacement.
 
-###### 直接设置
+###### Setting Text Directly
 
-对于plain类型直接设置，内容将被直接重置为指定文本
+For the plain type, the content will be directly set to the specified text.
 
 ```yaml
 - name: "modify response body plain"
@@ -314,11 +313,11 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
       body: "Hello 126.com, from Good-MITM"
 ```
 
-###### 替换
+###### Replacement
 
-替换支持简单替换和正则替换两种
+Replacement supports both simple replacement and regular expression replacement.
 
-简单替换
+Simple Replacement
 
 ```yaml
 - name: "modify response body replace"
@@ -327,11 +326,11 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
   action:
     modify-response:
       body:
-        origin: "网易首页"
-        new: "Good-MITM 首页"
+        origin: "NetEase homepage"
+        new: "Good-MITM homepage"
 ```
 
-正则替换
+Regular expression replacement.
 
 ```yaml
 - name: "modify response body regex replace"
@@ -345,15 +344,15 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
 
 ```
 
-##### MapModify 字典修改器
+##### MapModify
 
-`MapModify` 字典修改器主要针对字典类型的位置进行修改，例如 `header` 和 `cookies`
+`MapModify` is a modifier used to modify dictionary-type locations, such as `header` and `cookies`.
 
-`key` 代表字典的键，必须指定
+The `key` represents the key in the dictionary and must be specified.
 
-`value` 是 `TextModify` 类型，按照上文方法书写
+The `value` is of type `TextModify` and follows the methods mentioned above.
 
-如果指定 `remove` 为 `true`，则会删除该键值对
+If `remove` is set to `true`, the key-value pair will be removed.
 
 ```yaml
 - name: "modify response header"
@@ -376,19 +375,19 @@ sudo ip6tables -t nat -A OUTPUT -p tcp -m owner ! --uid-owner mitm --dport 443 -
           remove: true
 ```
 
-##### Header 修改
+##### Header Modification
 
-见 `MapModify` 部分方法
+Refer to the methods in the `MapModify` section.
 
-##### Cookie 修改
+##### Cookie Modification
 
-与 Header 修改方法一致
+Same as the Header modification method.
 
-如果指定 `remove` 为 `true` 还会同时对应的移除`set-cookie`项
+If `remove` is set to `true`, the corresponding `set-cookie` item will also be removed.
 
-##### Body修改
+##### Body Modification
 
-见 `TextModify` 部分
+Refer to the methods in the `TextModify` section.
 
 ## License
 
