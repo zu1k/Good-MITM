@@ -8,9 +8,9 @@
 [![GitHub license](https://img.shields.io/github/license/zu1k/good-mitm)](https://github.com/zu1k/good-mitm/blob/master/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-read-blue.svg?style=flat)](https://good-mitm.zu1k.com/)
 
-#### [中文版](github.com/zu1k/good-mitm/blob/master/README_zh.md)
+#### [中文版](https://github.com/zu1k/good-mitm/blob/master/README_zh.md)
 
-Utilize the `MITM` technique to perform operations such as `rewrite`, `redirect`, `reject` requests and responses.
+Rule-based MITM engine. Rewriting, redirecting and rejecting on HTTP(S) requests and responses, supports JavaScript.
 
 ## Features
 

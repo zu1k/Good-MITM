@@ -8,9 +8,9 @@
 [![GitHub license](https://img.shields.io/github/license/zu1k/good-mitm)](https://github.com/zu1k/good-mitm/blob/master/LICENSE)
 [![Docs](https://img.shields.io/badge/docs-read-blue.svg?style=flat)](https://good-mitm.zu1k.com/)
 
-#### [English](github.com/zu1k/good-mitm/blob/master/README.md)
+#### [English](https://github.com/zu1k/good-mitm/blob/master/README.md)
 
-利用`MITM`技术实现请求和返回的`重写`、`重定向`、`阻断`等操作
+基于规则的 MITM 引擎，支持 HTTP(S) 请求和返回的重写、重定向和阻断操作，支持 JavaScript 脚本介入
 
 ## 功能
 
