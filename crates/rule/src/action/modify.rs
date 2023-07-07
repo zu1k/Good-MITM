@@ -241,7 +241,7 @@ impl Modify {
         }
     }
 
-    fn modify_header<'a>(&self, header: &mut HeaderMap, md: &'a MapModify) {
+    fn modify_header(&self, header: &mut HeaderMap, md: &MapModify) {
         if md.remove {
             header.remove(&md.key);
         } else if let Some(ref text_md) = md.value {
