@@ -1,9 +1,9 @@
 [package]
 name = "good-mitm"
-version = "0.4.0"
+version = "0.4.2"
 authors = ["zu1k <i@zu1k.com>"]
 edition = "2021"
-description = "Use MITM technology to provide features like rewrite, redirect."
+description = "Good Man in the Middle: Use MITM technology to provide features like rewrite, redirect."
 readme = "README.md"
 homepage = "https://github.com/zu1k/good-mitm"
 repository = "https://github.com/zu1k/good-mitm"
@@ -19,7 +19,7 @@ codegen-units = 1
 
 [dependencies]
 mitm-core = { path = "crates/core", package = "good-mitm-core" }
-rule = { path = "crates/rule", package = "good-mitm-rule", features = ["js"] }
+rule = { path = "crates/rule", package = "good-mitm-rule" }
 
 anyhow = "1.0"
 clap = { version = "4", features = ["derive"] }
@@ -31,12 +31,13 @@ serde_yaml = "0.9"
 hyper-proxy = { version = "0.9", default-features = false }
 rustls-pemfile = "1.0"
 tokio = { version = "1", features = ["rt-multi-thread", "signal"] }
-rustls = "0.20"
+rustls = "0.21"
 trust_cert = { path = "crates/trust_cert", optional = true }
 
 [features]
 default = []
 trust-cert = ["dep:trust_cert"]
+js = ["rule/js"]
 
 [workspace]
 members = [

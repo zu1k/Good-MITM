@@ -5,13 +5,13 @@ use rcgen::{
     BasicConstraints, Certificate, CertificateParams, DistinguishedName, DnType,
     ExtendedKeyUsagePurpose, IsCa, KeyPair, KeyUsagePurpose, RcgenError, SanType,
 };
-use rustls::{
-    server::{ClientHello, ResolvesServerCert},
-    sign::CertifiedKey,
-};
 use std::sync::Arc;
 use time::{ext::NumericalDuration, OffsetDateTime};
-use tokio_rustls::rustls::{self, ServerConfig};
+use tokio_rustls::rustls::{
+    server::{ClientHello, ResolvesServerCert},
+    sign::CertifiedKey,
+    ServerConfig,
+};
 
 const CERT_TTL_DAYS: u64 = 365;
 const CERT_CACHE_TTL_SECONDS: u64 = CERT_TTL_DAYS * 24 * 60 * 60 / 2;
