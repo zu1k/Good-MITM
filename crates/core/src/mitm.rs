@@ -2,17 +2,21 @@ use crate::{
     ca::CertificateAuthority,
     handler::{CustomContextData, HttpHandler, MitmFilter},
     http_client::HttpClient,
+    sni_reader::{
+        read_sni_host_name_from_client_hello, HandshakeRecordReader, PrefixedReaderWriter,
+        RecordingBufReader,
+    },
 };
 use http::{header, uri::Scheme, HeaderValue, Uri};
 use hyper::{
-    body::HttpBody, server::conn::Http, service::service_fn, upgrade::Upgraded, Body, Method,
-    Request, Response,
+    body::HttpBody, server::conn::Http, service::service_fn, Body, Method, Request, Response,
 };
 use log::*;
-use std::{marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::Arc, time::Duration};
 use tokio::{
     io::{AsyncRead, AsyncWrite},
     net::TcpStream,
+    pin,
 };
 use tokio_rustls::TlsAcceptor;
 
@@ -150,7 +154,7 @@ where
             ..Default::default()
         };
 
-        if self.mitm_filter.filter(&ctx, &req).await {
+        if self.mitm_filter.filter_req(&ctx, &req).await {
             tokio::task::spawn(async move {
                 let authority = req
                     .uri()
@@ -175,10 +179,34 @@ where
         Ok(Response::new(Body::empty()))
     }
 
-    pub async fn serve_tls<IO: AsyncRead + AsyncWrite + Unpin + Send + 'static>(self, stream: IO) {
+    pub async fn serve_tls<IO: AsyncRead + AsyncWrite + Unpin + Send + 'static>(
+        self,
+        mut stream: IO,
+    ) {
+        // Read SNI hostname.
+        let mut recording_reader = RecordingBufReader::new(&mut stream);
+        let reader = HandshakeRecordReader::new(&mut recording_reader);
+        pin!(reader);
+        let sni_hostname = tokio::time::timeout(
+            Duration::from_secs(5),
+            read_sni_host_name_from_client_hello(reader),
+        )
+        .await
+        .unwrap()
+        .unwrap();
+
+        let read_buf = recording_reader.buf();
+        let client_stream = PrefixedReaderWriter::new(stream, read_buf);
+
+        if !self.mitm_filter.filter(&sni_hostname).await {
+            let remote_addr = format!("{sni_hostname}:443");
+            tokio::task::spawn(async move { tunnel(client_stream, remote_addr).await });
+            return;
+        }
+
         let server_config = self.ca.clone().gen_server_config();
 
-        match TlsAcceptor::from(server_config).accept(stream).await {
+        match TlsAcceptor::from(server_config).accept(client_stream).await {
             Ok(stream) => {
                 if let Err(e) = Http::new()
                     .http1_preserve_header_case(true)
@@ -239,8 +267,11 @@ fn host_addr(uri: &http::Uri) -> Option<String> {
     uri.authority().map(|auth| auth.to_string())
 }
 
-async fn tunnel(mut upgraded: Upgraded, addr: String) -> std::io::Result<()> {
+async fn tunnel<A>(mut client_stream: A, addr: String) -> std::io::Result<()>
+where
+    A: AsyncRead + AsyncWrite + Unpin,
+{
     let mut server = TcpStream::connect(addr).await?;
-    tokio::io::copy_bidirectional(&mut upgraded, &mut server).await?;
+    tokio::io::copy_bidirectional(&mut client_stream, &mut server).await?;
     Ok(())
 }

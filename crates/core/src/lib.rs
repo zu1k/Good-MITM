@@ -17,6 +17,7 @@ mod error;
 pub mod handler;
 mod http_client;
 pub mod mitm;
+mod sni_reader;
 
 #[derive(TypedBuilder)]
 pub struct Proxy<F, H, D>

@@ -45,8 +45,18 @@ impl<D: CustomContextData> MitmFilter<D> {
         }
     }
 
-    pub async fn filter(&self, _ctx: &HttpContext<D>, req: &Request<Body>) -> bool {
+    pub async fn filter_req(&self, _ctx: &HttpContext<D>, req: &Request<Body>) -> bool {
         let host = req.uri().host().unwrap_or_default();
+        let list = self.filters.read().unwrap();
+        for m in list.iter() {
+            if m.matches(host) {
+                return true;
+            }
+        }
+        false
+    }
+
+    pub async fn filter(&self, host: &str) -> bool {
         let list = self.filters.read().unwrap();
         for m in list.iter() {
             if m.matches(host) {
